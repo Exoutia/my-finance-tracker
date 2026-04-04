@@ -12,7 +12,7 @@ I will start to make the first few things.
   - From (Account)
   - Amount included into transaction.
 
-- When I enter the transaction it will save the transactions. it will automatically store and generate different views when needed. 
+- When I enter the transaction it will save the transactions. it will automatically store and generate different views when needed.
 - One will be the main view which will generated at the start or entering of the data into the transactions.
 - Other views will be generated when needed.
 
