@@ -1,337 +1,25 @@
 import json
 import sqlite3
-from dataclasses import dataclass, field
-from datetime import datetime
-from decimal import Decimal
-from enum import StrEnum, auto, unique
-from typing import Any, Type, Union
-from uuid import UUID, uuid4
-
-
-# --- Category Enums ---
-@unique
-class TransferCategory(StrEnum):
-    OTHER = auto()
-    SELF_TRANSFER = auto()
-
-
-@unique
-class ProvisionCategory(StrEnum):
-    OTHER = auto()
-
-
-@unique
-class LendingCategory(StrEnum):
-    PERSON = auto()
-    COMPANY = auto()
-
-
-@unique
-class LoanCategory(StrEnum):
-    PERSON = auto()
-    COMPANY = auto()
-
-
-@unique
-class IncomeCategory(StrEnum):
-    SALARY = auto()
-    INTEREST = auto()
-    DIVIDEND = auto()
-    OTHER = auto()
-
-
-@unique
-class ExpenseCategory(StrEnum):
-    RENT = auto()
-    INSURANCE = auto()
-    TRAVEL = auto()
-    CHARITY = auto()
-    FOOD = auto()
-    BILL = auto()
-    OTHER = auto()
-
-
-@unique
-class InvestmentCategory(StrEnum):
-    BONDS = auto()
-    MUTUAL_FUNDS = auto()
-    FIXED_DEPOSIT = auto()
-    STOCKS = auto()
-    ASSET = auto()
-    OTHER = auto()
-
-
-@unique
-class LendingRepaymentCategory(StrEnum):
-    LOAN_INTEREST = auto()
-    LOAN_REPAYMENT = auto()
-    FULL_PAYMENT = auto()
-    PART_PAYMENT = auto()
-    OTHER = auto()
-
-
-@unique
-class LoanRepaymentCategory(StrEnum):
-    LOAN_INTEREST = auto()
-    LOAN_REPAYMENT = auto()
-    FULL_PAYMENT = auto()
-    PART_PAYMENT = auto()
-    OTHER = auto()
-
-
-@unique
-class CreditCardExpenseCategory(StrEnum):
-    RENT = auto()
-    INSURANCE = auto()
-    TRAVEL = auto()
-    CHARITY = auto()
-    FOOD = auto()
-    BILL = auto()
-    OTHER = auto()
-
-
-@unique
-class CreditCardRepaymentCategory(StrEnum):
-    FULL_PAYMENT = auto()
-    PART_PAYMENT = auto()
-    INTEREST_PAYMENT = auto()
-    OTHER = auto()
-
-
-# --- Core Logic Enums ---
-
-
-@unique
-class TransactionType(StrEnum):
-    TRANSFER = auto()
-    EXPENSE = auto()
-    INCOME = auto()
-    PROVISION = auto()
-    INVESTMENT = auto()
-    LENDING = auto()
-    LENDING_REPAYMENT = auto()
-    LOAN = auto()
-    LOAN_REPAYMENT = auto()
-    CREDIT_CARD_LENDING = auto()
-    CREDIT_CARD_REPAYMENT = auto()
-
-
-@unique
-class EntityType(StrEnum):
-    LIQUID_ACCOUNT = auto()
-    DEMAT_ACCOUNT = auto()
-    STOCKS = auto()
-    FIXED_DEPOSIT_ACCOUNT = auto()
-    MUTUAL_FUND = auto()
-    BONDS = auto()
-    PERSON = auto()
-    COMPANY = auto()
-    OTHER = auto()
-    CREDIT_CARD = auto()
-
-
-class MutualFundType(StrEnum):
-    EQUITY = auto()
-    DEBT = auto()
-    HYBRID = auto()
-    ELSS = auto()
-    INDEX = auto()
-
-
-TransactionCategory = Union[
-    IncomeCategory,
-    ExpenseCategory,
-    InvestmentCategory,
-    LendingCategory,
-    LoanCategory,
-    LendingRepaymentCategory,
-    LoanRepaymentCategory,
-    CreditCardExpenseCategory,
-    CreditCardRepaymentCategory,
-    TransferCategory,
-]
-
-
-@dataclass(frozen=True)
-class LiquidAccount:
-    name: str
-    account_number_with_mask: str
-    uuid: UUID = field(default_factory=uuid4)
-    minimum_balance: Decimal = Decimal("0.00")
-
-    @property
-    def entity_type(self):
-        return EntityType.LIQUID_ACCOUNT
-
-
-@dataclass(frozen=True)
-class CreditCard:
-    name: str
-    card_number_with_mask: str
-    limit: Decimal
-    uuid: UUID = field(default_factory=uuid4)
-
-    @property
-    def entity_type(self):
-        return EntityType.CREDIT_CARD
-
-
-@dataclass(frozen=True)
-class Mutualfund:
-    name: str
-    type: MutualFundType
-    nav: Decimal | None
-    uuid: UUID = field(default_factory=uuid4)
-
-    @property
-    def entity_type(self):
-        return EntityType.MUTUAL_FUND
-
-
-@dataclass(frozen=True)
-class Stock:
-    symbol: str  # e.g., "RELIANCE"
-    exchange: str  # e.g., "NSE"
-    average_price: Decimal
-    quantity: int
-    uuid: UUID = field(default_factory=uuid4)
-
-    @property
-    def entity_type(self) -> EntityType:
-        return EntityType.STOCKS
-
-
-@dataclass(frozen=True)
-class FixedDeposit:
-    fd_number_with_mask: str
-    bank_name: str
-    principal_amount: Decimal
-    interest_rate: Decimal
-    maturity_date: datetime
-    uuid: UUID = field(default_factory=uuid4)
-
-    @property
-    def entity_type(self) -> EntityType:
-        return EntityType.FIXED_DEPOSIT_ACCOUNT
-
-
-@dataclass(frozen=True)
-class Bond:
-    isin: str  # International Securities Identification Number
-    name: str
-    coupon_rate: Decimal
-    face_value: Decimal
-    maturity_date: datetime
-    uuid: UUID = field(default_factory=uuid4)
-
-    @property
-    def entity_type(self) -> EntityType:
-        return EntityType.BONDS
-
-
-@dataclass(frozen=True)
-class ExternalContact:
-    """Covers both PERSON, COMPANY"""
-
-    name: str
-    category: LendingCategory | LoanCategory
-    is_institution: bool = False
-    uuid: UUID = field(default_factory=uuid4)
-
-    @property
-    def entity_type(self) -> EntityType:
-        return EntityType.COMPANY if self.is_institution else EntityType.PERSON
-
-
-@dataclass(frozen=True)
-class Other:
-    """Covers the virtual category like travelling, upi_lite, eating,
-    shops and every other expense that I am not sure
-    happened and not able to create a different entity"""
-
-    name: str
-    tags: list[str | None] = field(default_factory=list)
-    uuid: UUID = field(default_factory=uuid4)
-
-
-@dataclass(frozen=True)
-class EntityRegistry:
-    """
-    This acts as the master directory.
-    'account_reference' points to the UUID of a specific LiquidAccount, CreditCard, etc.
-    """
-
-    name: str
-    account_reference: UUID
-    entity_type: EntityType
-    uuid: UUID = field(default_factory=uuid4)
-
-
-CategoryClass = Type[
-    Union[
-        IncomeCategory,
-        ExpenseCategory,
-        InvestmentCategory,
-        LendingCategory,
-        LoanCategory,
-        LendingRepaymentCategory,
-        LoanRepaymentCategory,
-        CreditCardExpenseCategory,
-        CreditCardRepaymentCategory,
-        TransferCategory,
-        ProvisionCategory,
-    ]
-]
-
-TYPE_TO_ENUM: dict[TransactionType, CategoryClass] = {
-    TransactionType.INCOME: IncomeCategory,
-    TransactionType.EXPENSE: ExpenseCategory,
-    TransactionType.INVESTMENT: InvestmentCategory,
-    TransactionType.LENDING: LendingCategory,
-    TransactionType.LOAN: LoanCategory,
-    TransactionType.LENDING_REPAYMENT: LendingRepaymentCategory,
-    TransactionType.LOAN_REPAYMENT: LoanRepaymentCategory,
-    TransactionType.CREDIT_CARD_LENDING: CreditCardExpenseCategory,
-    TransactionType.CREDIT_CARD_REPAYMENT: CreditCardRepaymentCategory,
-    TransactionType.TRANSFER: TransferCategory,
-    TransactionType.PROVISION: ProvisionCategory,
-}
-
-
-@dataclass(frozen=True)
-class Transaction:
-    to_entities_id: UUID
-    from_entities_id: UUID
-    amount: Decimal
-    transaction_datetime: datetime
-    transaction_type: TransactionType
-    transaction_category: TransactionCategory
-    description: str | None = None
-    uuid: UUID = field(default_factory=uuid4)
-
-    def __post_init__(self):
-        if self.amount <= 0:
-            raise ValueError(f"Amount must be positive. Got {self.amount}")
-
-        if self.to_entities_id == self.from_entities_id:
-            raise ValueError("Source and Destination entities cannot be the same.")
-
-        self._validate_category_match()
-
-    def _validate_category_match(self) -> None:
-        expected_enum_class = TYPE_TO_ENUM.get(self.transaction_type)
-
-        if expected_enum_class is None:
-            raise ValueError(f"{TYPE_TO_ENUM} does not contain correct transaction type")
-
-        if not isinstance(self.transaction_category, expected_enum_class):
-            raise TypeError(
-                f"Type '{self.transaction_type}' requires {expected_enum_class.__name__}, "
-                f"got {type(self.transaction_category).__name__}."
-            )
-
-
-def create_db(db_path: str = "finance_db.sqlite", schema_path: str = "schema.sql"):
+from pathlib import Path
+from typing import Any
+from uuid import UUID
+
+from schemas import (
+    ENTITY_TYPE_TO_TABLE,
+    Bond,
+    CreditCard,
+    EntityType,
+    ExternalContact,
+    FixedDeposit,
+    LiquidAccount,
+    Mutualfund,
+    Other,
+    Stock,
+    TransactionSchema,
+)
+
+
+def create_db(db_path: Path, schema_path: Path):
     with open(schema_path, "r") as f:
         sql_script = f.read()
 
@@ -342,7 +30,7 @@ def create_db(db_path: str = "finance_db.sqlite", schema_path: str = "schema.sql
 
 
 class FinanceRepository:
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: Path):
         self.db_path = db_path
 
     def _get_connection(self):
@@ -352,7 +40,7 @@ class FinanceRepository:
         conn.execute("PRAGMA foreign_keys = ON;")
         return conn
 
-    def add_transaction(self, txn: Transaction):
+    def add_transaction(self, txn: TransactionSchema):
         sql = """
             INSERT INTO transactions (
                 uuid, from_entities_id, to_entities_id, amount,
@@ -379,15 +67,19 @@ class FinanceRepository:
         finally:
             conn.close()
 
-    def _register_and_insert(self, entity_uuid, name, ref, e_type, specific_sql, specific_params):
+    def _register_and_insert(
+        self, entity_uuid: UUID, name: str, ref: str, e_type: EntityType, specific_sql: str, specific_params: Any
+    ):
         type_val = e_type.value if hasattr(e_type, "value") else str(e_type)
+        table_name = ENTITY_TYPE_TO_TABLE[e_type]
         conn = self._get_connection()
         try:
             with conn:  # Handles COMMIT/ROLLBACK
                 cursor = conn.cursor()
                 cursor.execute(
-                    "INSERT INTO entity_registry (uuid, name, account_reference, entity_type) VALUES (?, ?, ?, ?)",
-                    (str(entity_uuid), name, ref, type_val),
+                    """INSERT INTO entity_registry (uuid, name, account_reference, entity_type, table_name)
+                    VALUES (?, ?, ?, ?, ?)""",
+                    (str(entity_uuid), name, ref, type_val, table_name),
                 )
                 cursor.execute(specific_sql, specific_params)
         except sqlite3.Error as e:
@@ -495,10 +187,10 @@ class FinanceRepository:
         """Maps the 'Other' dataclass to the 'virtual_entities' table."""
         # Convert list of tags to a JSON string for storage
         tags_json = json.dumps(other.tags)
-        sql = "INSERT INTO virtual_entities (uuid, name, tags) VALUES (?, ?, ?)"
-        params = (str(other.uuid), other.name, tags_json)
+        sql = "INSERT INTO virtual_entities (uuid, name, tags, description) VALUES (?, ?, ?, ?)"
+        params = (str(other.uuid), other.name, tags_json, other.description)
         # Using EntityType.OTHER for the registry
-        self._register_and_insert(other.uuid, other.name, "VIRTUAL", EntityType.OTHER, sql, params)
+        self._register_and_insert(other.uuid, other.name, "VIRTUAL", EntityType.VIRTUAL_ENTITY, sql, params)
 
     # --- Unified Save Dispatcher ---
     def save(self, entity: Any):
@@ -518,6 +210,6 @@ class FinanceRepository:
             return self.add_external_contact(entity)
         if isinstance(entity, Other):
             return self.add_other_entity(entity)
-        if isinstance(entity, Transaction):
+        if isinstance(entity, TransactionSchema):
             return self.add_transaction(entity)
         raise ValueError(f"Unknown entity type: {type(entity)}")

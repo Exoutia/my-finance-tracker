@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS entity_registry (
     uuid TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     account_reference TEXT NOT NULL,
+    table_name TEXT NOT NULL,
     entity_type TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -15,7 +16,8 @@ CREATE TABLE IF NOT EXISTS entity_registry (
 
 -- 3. Banking & Liabilities
 CREATE TABLE IF NOT EXISTS liquid_accounts (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     account_number_mask TEXT,
     minimum_balance TEXT,
@@ -25,7 +27,8 @@ CREATE TABLE IF NOT EXISTS liquid_accounts (
 );
 
 CREATE TABLE IF NOT EXISTS credit_cards (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     card_number_mask TEXT,
     credit_limit TEXT,
@@ -36,7 +39,8 @@ CREATE TABLE IF NOT EXISTS credit_cards (
 
 -- 4. Investments
 CREATE TABLE IF NOT EXISTS stocks (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE NOT NULL,
     symbol TEXT NOT NULL,
     exchange TEXT NOT NULL,
     average_price TEXT,
@@ -47,7 +51,8 @@ CREATE TABLE IF NOT EXISTS stocks (
 );
 
 CREATE TABLE IF NOT EXISTS mutual_funds (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     fund_type TEXT,
     nav TEXT,
@@ -57,7 +62,8 @@ CREATE TABLE IF NOT EXISTS mutual_funds (
 );
 
 CREATE TABLE IF NOT EXISTS fixed_deposits (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE NOT NULL,
     fd_number_mask TEXT,
     bank_name TEXT,
     principal_amount TEXT,
@@ -69,7 +75,8 @@ CREATE TABLE IF NOT EXISTS fixed_deposits (
 );
 
 CREATE TABLE IF NOT EXISTS bonds (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE NOT NULL,
     isin TEXT NOT NULL,
     name TEXT NOT NULL,
     coupon_rate TEXT,
@@ -82,7 +89,8 @@ CREATE TABLE IF NOT EXISTS bonds (
 
 -- 5. Contacts (People & Companies)
 CREATE TABLE IF NOT EXISTS external_contacts (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     category TEXT, -- LendingCategory or LoanCategory
     is_institution INTEGER DEFAULT 0,
@@ -94,9 +102,11 @@ CREATE TABLE IF NOT EXISTS external_contacts (
 -- 6. Virtual & Misc (The 'Other' class)
 -- Used for UPI Lite, Travel, Eating Out, etc.
 CREATE TABLE IF NOT EXISTS virtual_entities (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     tags TEXT, -- Store list as JSON string: '["travel", "personal"]'
+    description TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(uuid) REFERENCES entity_registry(uuid) ON DELETE CASCADE
