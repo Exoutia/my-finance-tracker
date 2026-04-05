@@ -67,6 +67,45 @@ class FinanceRepository:
         finally:
             conn.close()
 
+    def get_all_entities(self):
+        conn = self._get_connection()
+        try:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            query = """select e.name, e.uuid, e.table_name, e.entity_type from entity_registry e;"""
+            cur.execute(query)
+            return [dict(row) for row in cur.fetchall()]
+        except sqlite3.Error as e:
+            print("Facing some sqliet3 error", e)
+            raise
+        finally:
+            conn.close()
+
+    def get_recent_transactions(self, limit: int = 10):
+        conn = self._get_connection()
+        try:
+            conn.row_factory = sqlite3.Row  # Allows accessing columns by name
+            cursor = conn.cursor()
+            query = """
+                        SELECT
+                            t.*,
+                            from_e.name AS from_entity_name,
+                            to_e.name AS to_entity_name
+                        FROM transactions t
+                        LEFT JOIN entity_registry from_e ON t.from_entities_id = from_e.uuid
+                        LEFT JOIN entity_registry to_e ON t.to_entities_id = to_e.uuid
+                        ORDER BY t.created_at DESC
+                        LIMIT ?
+                    """
+            cursor.execute(query, (limit,))
+            # Convert rows to a list of dictionaries for FastAPI/Frontend JSON
+            return [dict(row) for row in cursor.fetchall()]
+        except sqlite3.Error as e:
+            print("Facing some sqliet3 error", e)
+            raise
+        finally:
+            conn.close()
+
     def _register_and_insert(
         self, entity_uuid: UUID, name: str, ref: str, e_type: EntityType, specific_sql: str, specific_params: Any
     ):

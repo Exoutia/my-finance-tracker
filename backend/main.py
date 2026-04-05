@@ -5,6 +5,7 @@ import uvicorn
 from config import settings
 from fastapi import FastAPI, HTTPException
 from fastapi.concurrency import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 from finance import FinanceRepository, create_db
 
 
@@ -19,8 +20,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(debug=settings.DEBUG, lifespan=lifespan, title="Finance Tracker API")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5174", "http://127.0.0.1:5174/", "http://127.0.0.1:5174"],  # Vite's default port
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-def get_repo():
+
+def get_repo() -> FinanceRepository:
     db_path = settings.DATABASE_PATH
     return FinanceRepository(db_path)
 
@@ -41,6 +49,43 @@ def save_entity(entity: Any):
 
 
 # --- Banking & Liabilities ---
+
+
+@app.get("/transactions/recent")
+def get_recent_transactions(limit: int = 10):
+    """
+    Fetch the last N transactions.
+    'limit' is a query parameter: /transactions?limit=5
+    """
+    try:
+        repo = get_repo()
+        data = repo.get_recent_transactions(limit)
+        return {"response": data}
+    except Exception as err:
+        raise HTTPException(status_code=400, detail=str(err)) from err
+
+
+@app.get("/transaction/transaction_types")
+def get_transaction_type():
+    data = [e.value for e in schemas.TransactionType]
+    return {"response": data}
+
+
+@app.get("/transaction/transaction_category")
+def get_transaction_category(transaction_type: schemas.TransactionType):
+    transaction_category = schemas.TYPE_TO_ENUM[transaction_type]
+    data = [e.value for e in transaction_category]
+    return {"response": data}
+
+
+@app.get("/entity")
+def get_all_entity():
+    try:
+        repo = get_repo()
+        data = repo.get_all_entities()
+        return {"response": data}
+    except Exception as err:
+        raise HTTPException(status_code=400, detail=str(err)) from err
 
 
 @app.post("/entities/liquid-account", status_code=201)
