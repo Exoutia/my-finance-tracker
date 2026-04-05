@@ -31,7 +31,7 @@ def db_setup(tmp_path):
     """Fixture to create a temporary database for each test."""
     db_path = tmp_path / "test_finance.db"
     # Ensure you have your schema.sql in the same directory or provide the path
-    schema_path = Path("schema.sql")
+    schema_path = Path(__file__).parent / Path("schema.sql")
 
     # Create the DB
     create_db(db_path, schema_path)

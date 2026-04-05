@@ -1,11 +1,10 @@
 from typing import Any
 
+import schemas
 import uvicorn
+from config import settings
 from fastapi import FastAPI, HTTPException
 from fastapi.concurrency import asynccontextmanager
-
-import schemas
-from config import settings
 from finance import FinanceRepository, create_db
 
 
