@@ -17,6 +17,9 @@ wheels/
 *.environments
 *.env
 *.json
+!settings.json
+!debug.json
+
 
 # testing
 .pytest_cache/
