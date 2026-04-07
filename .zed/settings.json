@@ -17,8 +17,6 @@
     "Python": {
       "colorize_brackets": true,
       "language_servers": [
-        // Disable basedpyright and enable Ty, and otherwise
-        // use the default configuration.
         "ty",
         "!basedpyright",
         "!pyright",
@@ -27,11 +25,32 @@
         "...",
       ],
     },
+    "TypeScript": {
+      "colorize_brackets": true,
+      "language_servers": ["deno", "!vtsls", "!typescript-language-server"],
+      "formatter": "language_server",
+    },
+    "TSX": {
+      "colorize_brackets": true,
+      "language_servers": ["deno", "!vtsls", "!typescript-language-server"],
+      "formatter": "language_server",
+    },
   },
   "lsp": {
     "vscode-css-language-server": {
       "settings": {
         "css": { "lint": { "unknownAtRules": "ignore" } },
+      },
+    },
+    "deno": {
+      "settings": {
+        "deno": {
+          "enable": true,
+          "lint": true,
+          "suggest": {
+            "completeFunctionCalls": true,
+          },
+        },
       },
     },
   },
