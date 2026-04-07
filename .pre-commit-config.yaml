@@ -30,3 +30,17 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      - id: deno-fmt
+        name: Deno Format
+        entry: deno fmt
+        language: system
+        files: ^frontend/.*\.(ts|tsx|js|jsx|json)$
+        pass_filenames: true
+
+      - id: deno-lint
+        name: Deno Lint
+        entry: deno lint
+        language: system
+        files: ^frontend/.*\.(ts|tsx|js|jsx)$
+        pass_filenames: true

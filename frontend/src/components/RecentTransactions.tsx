@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import * as api from "../services/transactionsService";
-import { capitalize } from "../utils/textTransform";
+import * as api from "@/src/services/transactionsService.ts";
+import { RecentTransactionsRows } from "@/src/components/RecentTransactionsRows.tsx";
 
 export default function RecentTransactions() {
   const [transactions, setTransactions] = useState<api.Transaction[]>([]);
@@ -10,7 +10,7 @@ export default function RecentTransactions() {
   const [loading, setLoading] = useState(true);
 
   const [newRow, setNewRow] = useState<api.TransactionCreate>({
-    transaction_datetime: new Date().toISOString().slice(0, 16),
+    transaction_datetime: Temporal.Now.plainDateISO().toString(), // deno-lint-ignore no-undef
     from_entities_id: "",
     to_entities_id: "",
     amount: "",
@@ -57,7 +57,9 @@ export default function RecentTransactions() {
 
   // 3. Handle Submit
   const handleAdd = async () => {
-    if (!newRow.from_entities_id || !newRow.to_entities_id || !newRow.amount) {
+    if (
+      !newRow.from_entities_id || !newRow.to_entities_id || !newRow.amount
+    ) {
       alert("Please fill in all required fields (From, To, Amount)");
       return;
     }
@@ -75,7 +77,9 @@ export default function RecentTransactions() {
     }
   };
 
-  if (loading) return <div className="p-10 text-center">Loading Ledger...</div>;
+  if (loading) {
+    return <div className="p-10 text-center">Loading Ledger...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-6xl p-4">
@@ -93,32 +97,7 @@ export default function RecentTransactions() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {transactions.map((txn) => (
-              <tr key={txn.uuid} className="hover:bg-gray-50 transition-colors">
-                <td className="p-3 text-gray-500">
-                  {txn.transaction_datetime.replace("T", " ").slice(0, 16)}
-                </td>
-                <td className="p-3">
-                  <span className="rounded-full px-2 py-0.5">
-                    {capitalize(txn.transaction_type, "_")}
-                  </span>
-                </td>
-                <td className="p-3 text-gray-600">
-                  {capitalize(txn.transaction_category, "_")}
-                </td>
-                <td className="p-3 font-medium">
-                  {capitalize(txn.from_entity_name)}
-                </td>
-                <td className="p-3 font-medium">
-                  {capitalize(txn.to_entity_name)}
-                </td>
-                <td className="p-3 font-mono">
-                  ₹{parseFloat(txn.amount).toLocaleString("en-IN")}
-                </td>
-                <td className="p-3 text-center text-gray-300">—</td>
-              </tr>
-            ))}
-
+            <RecentTransactionsRows transactions={transactions} />
             <tr className="bg-blue-50/50">
               <td className="p-1">
                 <input
@@ -129,8 +108,7 @@ export default function RecentTransactions() {
                     setNewRow({
                       ...newRow,
                       transaction_datetime: e.target.value,
-                    })
-                  }
+                    })}
                 />
               </td>
               <td className="p-1">
@@ -138,8 +116,10 @@ export default function RecentTransactions() {
                   className="border rounded p-1 w-full"
                   value={newRow.transaction_type}
                   onChange={(e) =>
-                    setNewRow({ ...newRow, transaction_type: e.target.value })
-                  }
+                    setNewRow({
+                      ...newRow,
+                      transaction_type: e.target.value,
+                    })}
                 >
                   {types.map((t) => (
                     <option key={t} value={t}>
@@ -153,8 +133,10 @@ export default function RecentTransactions() {
                   className="border rounded p-1 w-full"
                   value={newRow.category}
                   onChange={(e) =>
-                    setNewRow({ ...newRow, category: e.target.value })
-                  }
+                    setNewRow({
+                      ...newRow,
+                      category: e.target.value,
+                    })}
                 >
                   {categories.map((c) => (
                     <option key={c} value={c}>
@@ -168,8 +150,10 @@ export default function RecentTransactions() {
                   className="border rounded p-1 w-full"
                   value={newRow.from_entities_id}
                   onChange={(e) =>
-                    setNewRow({ ...newRow, from_entities_id: e.target.value })
-                  }
+                    setNewRow({
+                      ...newRow,
+                      from_entities_id: e.target.value,
+                    })}
                 >
                   <option value="">Select...</option>
                   {entities.map((e) => (
@@ -184,8 +168,10 @@ export default function RecentTransactions() {
                   className="border rounded p-1 w-full"
                   value={newRow.to_entities_id}
                   onChange={(e) =>
-                    setNewRow({ ...newRow, to_entities_id: e.target.value })
-                  }
+                    setNewRow({
+                      ...newRow,
+                      to_entities_id: e.target.value,
+                    })}
                 >
                   <option value="">Select...</option>
                   {entities.map((e) => (
@@ -202,13 +188,16 @@ export default function RecentTransactions() {
                   placeholder="0.00"
                   value={newRow.amount}
                   onChange={(e) =>
-                    setNewRow({ ...newRow, amount: e.target.value })
-                  }
+                    setNewRow({
+                      ...newRow,
+                      amount: e.target.value,
+                    })}
                   onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                 />
               </td>
               <td className="p-1 text-center">
                 <button
+                  type="submit"
                   onClick={handleAdd}
                   className="rounded bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors"
                 >
