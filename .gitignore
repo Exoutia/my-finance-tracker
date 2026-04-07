@@ -16,7 +16,7 @@ wheels/
 *.sqlit3
 *.environments
 *.env
-*.json
+transaction*.json
 !settings.json
 !debug.json
 

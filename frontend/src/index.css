@@ -1,68 +1,68 @@
 @import "tailwindcss";
 
 @theme {
-    --color-laser-blue-50: oklch(95.15% 0.016 266.28);
-    --color-laser-blue-100: oklch(90.31% 0.033 266.92);
-    --color-laser-blue-200: oklch(80.54% 0.069 266.48);
-    --color-laser-blue-300: oklch(70.77% 0.105 266.09);
-    --color-laser-blue-400: oklch(61.13% 0.145 264.95);
-    --color-laser-blue-500: oklch(52% 0.184 263.67);
-    --color-laser-blue-600: oklch(44.42% 0.153 263.78);
-    --color-laser-blue-700: oklch(36.5% 0.121 263.97);
-    --color-laser-blue-800: oklch(28.19% 0.088 263.95);
-    --color-laser-blue-900: oklch(19.21% 0.049 264.52);
-    --color-laser-blue-950: oklch(16.17% 0.036 263.67);
+  --color-laser-blue-50: oklch(95.15% 0.016 266.28);
+  --color-laser-blue-100: oklch(90.31% 0.033 266.92);
+  --color-laser-blue-200: oklch(80.54% 0.069 266.48);
+  --color-laser-blue-300: oklch(70.77% 0.105 266.09);
+  --color-laser-blue-400: oklch(61.13% 0.145 264.95);
+  --color-laser-blue-500: oklch(52% 0.184 263.67);
+  --color-laser-blue-600: oklch(44.42% 0.153 263.78);
+  --color-laser-blue-700: oklch(36.5% 0.121 263.97);
+  --color-laser-blue-800: oklch(28.19% 0.088 263.95);
+  --color-laser-blue-900: oklch(19.21% 0.049 264.52);
+  --color-laser-blue-950: oklch(16.17% 0.036 263.67);
 
-    --color-regal-navy-50: oklch(95.2% 0.014 268.49);
-    --color-regal-navy-100: oklch(90.64% 0.027 267.52);
-    --color-regal-navy-200: oklch(80.94% 0.058 268.57);
-    --color-regal-navy-300: oklch(71.34% 0.089 267.47);
-    --color-regal-navy-400: oklch(61.74% 0.122 266.29);
-    --color-regal-navy-500: oklch(52.15% 0.158 265.23);
-    --color-regal-navy-600: oklch(44.71% 0.131 265.05);
-    --color-regal-navy-700: oklch(36.72% 0.104 265.36);
-    --color-regal-navy-800: oklch(28.29% 0.074 265.98);
-    --color-regal-navy-900: oklch(19.47% 0.04 265.56);
-    --color-regal-navy-950: oklch(16.51% 0.029 264.24);
+  --color-regal-navy-50: oklch(95.2% 0.014 268.49);
+  --color-regal-navy-100: oklch(90.64% 0.027 267.52);
+  --color-regal-navy-200: oklch(80.94% 0.058 268.57);
+  --color-regal-navy-300: oklch(71.34% 0.089 267.47);
+  --color-regal-navy-400: oklch(61.74% 0.122 266.29);
+  --color-regal-navy-500: oklch(52.15% 0.158 265.23);
+  --color-regal-navy-600: oklch(44.71% 0.131 265.05);
+  --color-regal-navy-700: oklch(36.72% 0.104 265.36);
+  --color-regal-navy-800: oklch(28.29% 0.074 265.98);
+  --color-regal-navy-900: oklch(19.47% 0.04 265.56);
+  --color-regal-navy-950: oklch(16.51% 0.029 264.24);
 
-    --color-blush-rose-50: oklch(95.22% 0.016 358.04);
-    --color-blush-rose-100: oklch(90.54% 0.034 359.24);
-    --color-blush-rose-200: oklch(81.19% 0.071 0.58);
-    --color-blush-rose-300: oklch(72.17% 0.107 2.61);
-    --color-blush-rose-400: oklch(63.65% 0.146 5.66);
-    --color-blush-rose-500: oklch(56.35% 0.18 9.49);
-    --color-blush-rose-600: oklch(47.96% 0.15 9.3);
-    --color-blush-rose-700: oklch(39.24% 0.119 8.26);
-    --color-blush-rose-800: oklch(30.05% 0.087 7.33);
-    --color-blush-rose-900: oklch(20.1% 0.05 5.43);
-    --color-blush-rose-950: oklch(16.97% 0.036 5.59);
+  --color-blush-rose-50: oklch(95.22% 0.016 358.04);
+  --color-blush-rose-100: oklch(90.54% 0.034 359.24);
+  --color-blush-rose-200: oklch(81.19% 0.071 0.58);
+  --color-blush-rose-300: oklch(72.17% 0.107 2.61);
+  --color-blush-rose-400: oklch(63.65% 0.146 5.66);
+  --color-blush-rose-500: oklch(56.35% 0.18 9.49);
+  --color-blush-rose-600: oklch(47.96% 0.15 9.3);
+  --color-blush-rose-700: oklch(39.24% 0.119 8.26);
+  --color-blush-rose-800: oklch(30.05% 0.087 7.33);
+  --color-blush-rose-900: oklch(20.1% 0.05 5.43);
+  --color-blush-rose-950: oklch(16.97% 0.036 5.59);
 
-    --color-papaya-whip-50: oklch(97.56% 0.024 83.42);
-    --color-papaya-whip-100: oklch(95.21% 0.047 82.71);
-    --color-papaya-whip-200: oklch(90.69% 0.092 82.18);
-    --color-papaya-whip-300: oklch(86.49% 0.131 80.68);
-    --color-papaya-whip-400: oklch(82.87% 0.159 77.82);
-    --color-papaya-whip-500: oklch(79.45% 0.171 71.19);
-    --color-papaya-whip-600: oklch(67.36% 0.144 71.91);
-    --color-papaya-whip-700: oklch(54.5% 0.117 72.24);
-    --color-papaya-whip-800: oklch(41.04% 0.087 74.06);
-    --color-papaya-whip-900: oklch(26.35% 0.055 78.74);
-    --color-papaya-whip-950: oklch(21.59% 0.045 81.08);
+  --color-papaya-whip-50: oklch(97.56% 0.024 83.42);
+  --color-papaya-whip-100: oklch(95.21% 0.047 82.71);
+  --color-papaya-whip-200: oklch(90.69% 0.092 82.18);
+  --color-papaya-whip-300: oklch(86.49% 0.131 80.68);
+  --color-papaya-whip-400: oklch(82.87% 0.159 77.82);
+  --color-papaya-whip-500: oklch(79.45% 0.171 71.19);
+  --color-papaya-whip-600: oklch(67.36% 0.144 71.91);
+  --color-papaya-whip-700: oklch(54.5% 0.117 72.24);
+  --color-papaya-whip-800: oklch(41.04% 0.087 74.06);
+  --color-papaya-whip-900: oklch(26.35% 0.055 78.74);
+  --color-papaya-whip-950: oklch(21.59% 0.045 81.08);
 
-    --color-tan-50: oklch(96.2% 0.008 48.65);
-    --color-tan-100: oklch(92.29% 0.015 50.8);
-    --color-tan-200: oklch(84.73% 0.031 54.64);
-    --color-tan-300: oklch(76.83% 0.048 53);
-    --color-tan-400: oklch(69.13% 0.066 53.8);
-    --color-tan-500: oklch(61.14% 0.084 52.26);
-    --color-tan-600: oklch(52.22% 0.071 53.04);
-    --color-tan-700: oklch(42.59% 0.055 51.94);
-    --color-tan-800: oklch(32.72% 0.04 53.33);
-    --color-tan-900: oklch(21.67% 0.021 49.82);
-    --color-tan-950: oklch(18.21% 0.016 47.84);
+  --color-tan-50: oklch(96.2% 0.008 48.65);
+  --color-tan-100: oklch(92.29% 0.015 50.8);
+  --color-tan-200: oklch(84.73% 0.031 54.64);
+  --color-tan-300: oklch(76.83% 0.048 53);
+  --color-tan-400: oklch(69.13% 0.066 53.8);
+  --color-tan-500: oklch(61.14% 0.084 52.26);
+  --color-tan-600: oklch(52.22% 0.071 53.04);
+  --color-tan-700: oklch(42.59% 0.055 51.94);
+  --color-tan-800: oklch(32.72% 0.04 53.33);
+  --color-tan-900: oklch(21.67% 0.021 49.82);
+  --color-tan-950: oklch(18.21% 0.016 47.84);
 
-    --spacing-nav-foot-height: 40px;
-    --spacing-main-height: calc(
-        100lvh - calc(2 * var(--spacing-nav-foot-height))
-    );
+  --spacing-nav-foot-height: 40px;
+  --spacing-main-height: calc(
+    100lvh - calc(2 * var(--spacing-nav-foot-height))
+  );
 }

@@ -22,7 +22,14 @@ app = FastAPI(debug=settings.DEBUG, lifespan=lifespan, title="Finance Tracker AP
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5174", "http://127.0.0.1:5174/", "http://127.0.0.1:5174"],  # Vite's default port
+    allow_origins=[
+        "http://localhost:5174",
+        "http://127.0.0.1:5174/",
+        "http://127.0.0.1:5174",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173/",
+        "http://127.0.0.1:5173",
+    ],  # Vite's default port
     allow_methods=["*"],
     allow_headers=["*"],
 )

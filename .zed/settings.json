@@ -35,6 +35,11 @@
       "language_servers": ["deno", "!vtsls", "!typescript-language-server"],
       "formatter": "language_server",
     },
+    "JavaScript": {
+      "colorize_brackets": true,
+      "language_servers": ["deno", "!vtsls", "!typescript-language-server"],
+      "formatter": "language_server",
+    },
   },
   "lsp": {
     "vscode-css-language-server": {
