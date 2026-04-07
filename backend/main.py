@@ -58,6 +58,18 @@ def save_entity(entity: Any):
 # --- Banking & Liabilities ---
 
 
+@app.get("/transaction/transaction_types_to_categories")
+def get_transaction_types_to_categories():
+    try:
+        data = {
+            transaction_type.value: [category.value for category in category_enum]
+            for transaction_type, category_enum in schemas.TYPE_TO_ENUM.items()
+        }
+        return {"response": data}
+    except Exception as err:
+        raise HTTPException(status_code=400, detail=str(err)) from err
+
+
 @app.get("/transactions/recent")
 def get_recent_transactions(limit: int = 10):
     """
@@ -74,8 +86,11 @@ def get_recent_transactions(limit: int = 10):
 
 @app.get("/transaction/transaction_types")
 def get_transaction_type():
-    data = [e.value for e in schemas.TransactionType]
-    return {"response": data}
+    try:
+        data = [e.value for e in schemas.TransactionType]
+        return {"response": data}
+    except Exception as err:
+        raise HTTPException(status_code=400, detail=str(err)) from err
 
 
 @app.get("/transaction/transaction_category")

@@ -69,6 +69,18 @@ async function get_transaction_types() {
   return data.response;
 }
 
+async function get_transaction_type_to_categories() {
+  const response = await fetch(
+    `${BASE_URL}/transaction/transaction_types_to_categories`,
+  );
+  if (!response.ok) {
+    throw new Error("No record found");
+  }
+
+  const data = await response.json();
+  return data.response;
+}
+
 async function get_categories(type: string) {
   const response = await fetch(
     `${BASE_URL}/transaction/transaction_category?transaction_type=${type}`,
@@ -112,5 +124,6 @@ export {
   get_all_entities,
   get_categories,
   get_recent_transactions,
+  get_transaction_type_to_categories,
   get_transaction_types,
 };

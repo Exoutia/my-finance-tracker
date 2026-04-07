@@ -6,7 +6,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS entity_registry (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     uuid TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
+    name TEXT UNIQUE NOT NULL,
     account_reference TEXT NOT NULL,
     table_name TEXT NOT NULL,
     entity_type TEXT NOT NULL,
