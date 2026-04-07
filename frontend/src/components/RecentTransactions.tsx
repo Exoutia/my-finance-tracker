@@ -1,24 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import * as api from "@/src/services/transactionsService.ts";
 import { RecentTransactionsRows } from "@/src/components/RecentTransactionsRows.tsx";
+import { AddTransactionRow } from "@/src/components/AddTransactionRow.tsx";
 
 export default function RecentTransactions() {
   const [transactions, setTransactions] = useState<api.Transaction[]>([]);
   const [entities, setEntities] = useState<api.Entity[]>([]);
   const [types, setTypes] = useState<string[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [newRow, setNewRow] = useState<api.TransactionCreate>({
-    transaction_datetime: Temporal.Now.plainDateISO().toString(), // deno-lint-ignore no-undef
-    from_entities_id: "",
-    to_entities_id: "",
-    amount: "",
-    transaction_type: "expense",
-    category: "rent",
-  });
-
-  // 1. Initial Load
   const initLoad = useCallback(async () => {
     try {
       const [txnRes, entRes, typeRes] = await Promise.all([
@@ -40,36 +30,10 @@ export default function RecentTransactions() {
     initLoad();
   }, [initLoad]);
 
-  // 2. Dynamic Category Loading
-  // We target only the specific property to avoid the dependency loop
-  const currentType = newRow.transaction_type;
-
-  useEffect(() => {
-    if (currentType) {
-      api.get_categories(currentType).then((data) => {
-        setCategories(data);
-        if (data.length > 0) {
-          setNewRow((prev) => ({ ...prev, category: data[0] }));
-        }
-      });
-    }
-  }, [currentType]);
-
-  // 3. Handle Submit
-  const handleAdd = async () => {
-    if (
-      !newRow.from_entities_id || !newRow.to_entities_id || !newRow.amount
-    ) {
-      alert("Please fill in all required fields (From, To, Amount)");
-      return;
-    }
+  const handleAddTransaction = async (newRow: api.TransactionCreate) => {
     try {
       await api.create_transaction(newRow);
-
-      // Reset amount and keep date/type for convenience
-      setNewRow((prev) => ({ ...prev, amount: "" }));
-
-      // Refresh list - matching the structure used in initLoad
+      // Refresh only the transaction list
       const updated = await api.get_recent_transactions();
       setTransactions(updated.toReversed());
     } catch (err) {
@@ -98,113 +62,11 @@ export default function RecentTransactions() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             <RecentTransactionsRows transactions={transactions} />
-            <tr className="bg-blue-50/50">
-              <td className="p-1">
-                <input
-                  type="date"
-                  className="border rounded p-1"
-                  value={newRow.transaction_datetime}
-                  onChange={(e) =>
-                    setNewRow({
-                      ...newRow,
-                      transaction_datetime: e.target.value,
-                    })}
-                />
-              </td>
-              <td className="p-1">
-                <select
-                  className="border rounded p-1 w-full"
-                  value={newRow.transaction_type}
-                  onChange={(e) =>
-                    setNewRow({
-                      ...newRow,
-                      transaction_type: e.target.value,
-                    })}
-                >
-                  {types.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td className="p-1">
-                <select
-                  className="border rounded p-1 w-full"
-                  value={newRow.category}
-                  onChange={(e) =>
-                    setNewRow({
-                      ...newRow,
-                      category: e.target.value,
-                    })}
-                >
-                  {categories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td className="p-1">
-                <select
-                  className="border rounded p-1 w-full"
-                  value={newRow.from_entities_id}
-                  onChange={(e) =>
-                    setNewRow({
-                      ...newRow,
-                      from_entities_id: e.target.value,
-                    })}
-                >
-                  <option value="">Select...</option>
-                  {entities.map((e) => (
-                    <option key={e.uuid} value={e.uuid}>
-                      {e.name}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td className="p-1">
-                <select
-                  className="border rounded p-1 w-full"
-                  value={newRow.to_entities_id}
-                  onChange={(e) =>
-                    setNewRow({
-                      ...newRow,
-                      to_entities_id: e.target.value,
-                    })}
-                >
-                  <option value="">Select...</option>
-                  {entities.map((e) => (
-                    <option key={e.uuid} value={e.uuid}>
-                      {e.name}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td className="p-1">
-                <input
-                  type="number"
-                  className="border rounded p-1 w-full"
-                  placeholder="0.00"
-                  value={newRow.amount}
-                  onChange={(e) =>
-                    setNewRow({
-                      ...newRow,
-                      amount: e.target.value,
-                    })}
-                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                />
-              </td>
-              <td className="p-1 text-center">
-                <button
-                  type="submit"
-                  onClick={handleAdd}
-                  className="rounded bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors"
-                >
-                  ADD
-                </button>
-              </td>
-            </tr>
+            <AddTransactionRow
+              entities={entities}
+              types={types}
+              onAdd={handleAddTransaction}
+            />
           </tbody>
         </table>
       </div>

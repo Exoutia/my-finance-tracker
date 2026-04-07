@@ -1,5 +1,5 @@
-import Header from "./components/Header";
-import Main from "./components/Main";
+import Main from "@/src/components/Main.tsx";
+import Header from "@/src/components/Header.tsx";
 // Usage
 const App = () => {
   return (
