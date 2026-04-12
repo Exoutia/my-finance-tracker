@@ -3,9 +3,10 @@ from typing import Any
 import schemas
 import uvicorn
 from config import settings
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from finance import FinanceRepository, create_db
 
 
@@ -13,49 +14,68 @@ from finance import FinanceRepository, create_db
 async def lifespan(app: FastAPI):
     db_path = settings.DATABASE_PATH
     schema_path = settings.SQL_FILE_PATH
-    if not db_path.exists():
-        create_db(db_path, schema_path)
+
+    try:
+        if not db_path.exists():
+            create_db(db_path, schema_path)
+    except Exception as e:
+        raise e
+
     yield
 
 
 app = FastAPI(debug=settings.DEBUG, lifespan=lifespan, title="Finance Tracker API")
 
+# --- 3. Middleware ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5174",
-        "http://127.0.0.1:5174/",
         "http://127.0.0.1:5174",
         "http://localhost:5173",
-        "http://127.0.0.1:5173/",
         "http://127.0.0.1:5173",
-    ],  # Vite's default port
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
+# --- 4. Global Exception Handler ---
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catches any error not explicitly handled in routes."""
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred.", "type": type(exc).__name__},
+    )
+
+
+# --- 5. Helpers ---
 def get_repo() -> FinanceRepository:
-    db_path = settings.DATABASE_PATH
-    return FinanceRepository(db_path)
+    return FinanceRepository(settings.DATABASE_PATH)
+
+
+def save_entity(entity: Any):
+    """Centralized save logic with specific error branching and logging."""
+    repo = get_repo()
+    entity_name = type(entity).__name__
+
+    try:
+        repo.save(entity)
+        return {"message": f"{entity_name} created", "uuid": getattr(entity, "uuid", None)}
+
+    except ValueError as ve:
+        # Catch validation errors from the business logic layer
+        raise HTTPException(status_code=422, detail=str(ve)) from ve
+
+    except Exception as err:
+        # Catch database or unexpected errors
+        raise HTTPException(status_code=500, detail="Database operation failed") from err
 
 
 @app.get("/")
 async def root():
     return {"status": "Finance Tracker API is running"}
-
-
-def save_entity(entity: Any):
-    """Helper to handle repository saving with clean error chaining"""
-    repo = get_repo()
-    try:
-        repo.save(entity)
-        return {"message": f"{type(entity).__name__} created", "uuid": entity.uuid}
-    except Exception as err:
-        raise HTTPException(status_code=400, detail=str(err)) from err
-
-
-# --- Banking & Liabilities ---
 
 
 @app.get("/transaction/transaction_types_to_categories")
@@ -67,47 +87,44 @@ def get_transaction_types_to_categories():
         }
         return {"response": data}
     except Exception as err:
-        raise HTTPException(status_code=400, detail=str(err)) from err
+        raise HTTPException(status_code=500, detail="Internal data mapping error") from err
 
 
 @app.get("/transactions/recent")
 def get_recent_transactions(limit: int = 10):
-    """
-    Fetch the last N transactions.
-    'limit' is a query parameter: /transactions?limit=5
-    """
+    repo = get_repo()
     try:
-        repo = get_repo()
         data = repo.get_recent_transactions(limit)
         return {"response": data}
     except Exception as err:
-        raise HTTPException(status_code=400, detail=str(err)) from err
+        raise HTTPException(status_code=500, detail="Error retrieving ledger data") from err
 
 
 @app.get("/transaction/transaction_types")
 def get_transaction_type():
-    try:
-        data = [e.value for e in schemas.TransactionType]
-        return {"response": data}
-    except Exception as err:
-        raise HTTPException(status_code=400, detail=str(err)) from err
+    return {"response": [e.value for e in schemas.TransactionType]}
 
 
 @app.get("/transaction/transaction_category")
 def get_transaction_category(transaction_type: schemas.TransactionType):
-    transaction_category = schemas.TYPE_TO_ENUM[transaction_type]
-    data = [e.value for e in transaction_category]
-    return {"response": data}
+    try:
+        transaction_category = schemas.TYPE_TO_ENUM[transaction_type]
+        return {"response": [e.value for e in transaction_category]}
+    except KeyError as err:
+        raise HTTPException(status_code=404, detail="Transaction type not found") from err
 
 
 @app.get("/entity")
 def get_all_entity():
+    repo = get_repo()
     try:
-        repo = get_repo()
         data = repo.get_all_entities()
         return {"response": data}
     except Exception as err:
-        raise HTTPException(status_code=400, detail=str(err)) from err
+        raise HTTPException(status_code=500, detail="Could not load entities") from err
+
+
+# --- POST Endpoints (Using the enhanced save_entity) ---
 
 
 @app.post("/entities/liquid-account", status_code=201)
@@ -122,9 +139,6 @@ async def create_liquid_account(data: schemas.LiquidAccountCreate):
 async def create_credit_card(data: schemas.CreditCardCreate):
     card = schemas.CreditCard(name=data.name, card_number_with_mask=data.card_number_with_mask, limit=data.limit)
     return save_entity(card)
-
-
-# --- Investments ---
 
 
 @app.post("/entities/stock", status_code=201)
@@ -165,9 +179,6 @@ async def create_bond(data: schemas.BondCreate):
     return save_entity(bond)
 
 
-# --- Contacts & Virtual ---
-
-
 @app.post("/entities/external-contact", status_code=201)
 async def create_external_contact(data: schemas.ExternalContactCreate):
     contact = schemas.ExternalContact(name=data.name, category=data.category, is_institution=data.is_institution)
@@ -178,9 +189,6 @@ async def create_external_contact(data: schemas.ExternalContactCreate):
 async def create_virtual_entity(data: schemas.OtherEntityCreate):
     virtual = schemas.Other(name=data.name, tags=data.tags, description=data.description)
     return save_entity(virtual)
-
-
-# --- The Ledger ---
 
 
 @app.post("/transactions", status_code=201)
@@ -198,5 +206,4 @@ async def create_transaction(data: schemas.TransactionCreate):
 
 
 if __name__ == "__main__":
-    # for debug purpse
     uvicorn.run(app, host="0.0.0.0", port=settings.PORT)
