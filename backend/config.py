@@ -7,11 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     DATABASE_NAME: str = "finance.db"
-    SQL_FILE_NAME: str = "schema.sql"
     BASE_PATH: Path = Path(__file__).parent
-    SQL_FILE_PATH: Path = BASE_PATH / SQL_FILE_NAME
     DATABASE_PATH: Path = BASE_PATH / DATABASE_NAME
-    DATABASE_URL: str = f"sqlite://{BASE_PATH}/{DATABASE_NAME}"
+    DATABASE_URL: str = f"sqlite:///{DATABASE_PATH.absolute()}"
     API_KEY: Optional[SecretStr] = None
 
     PORT: int = Field(default=8000, gt=1024, lt=65535)

@@ -1,10 +1,11 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum, auto, unique
-from typing import List, Literal, Optional, Type, Union
-from uuid import UUID, uuid4
+from typing import List, Optional, Type, Union
+from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from models import EntityType, MutualFundType, TransactionType
+from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
 
 @unique
@@ -96,46 +97,6 @@ class CreditCardRepaymentCategory(StrEnum):
     OTHER = auto()
 
 
-# --- Core Logic Enums ---
-
-
-@unique
-class TransactionType(StrEnum):
-    TRANSFER = auto()
-    EXPENSE = auto()
-    INCOME = auto()
-    PROVISION = auto()
-    INVESTMENT = auto()
-    LENDING = auto()
-    LENDING_REPAYMENT = auto()
-    LOAN = auto()
-    LOAN_REPAYMENT = auto()
-    CREDIT_CARD_LENDING = auto()
-    CREDIT_CARD_REPAYMENT = auto()
-
-
-@unique
-class EntityType(StrEnum):
-    LIQUID_ACCOUNT = auto()
-    DEMAT_ACCOUNT = auto()
-    STOCKS = auto()
-    FIXED_DEPOSIT_ACCOUNT = auto()
-    MUTUAL_FUND = auto()
-    BONDS = auto()
-    PERSON = auto()
-    COMPANY = auto()
-    VIRTUAL_ENTITY = auto()
-    CREDIT_CARD = auto()
-
-
-class MutualFundType(StrEnum):
-    EQUITY = auto()
-    DEBT = auto()
-    HYBRID = auto()
-    ELSS = auto()
-    INDEX = auto()
-
-
 TransactionCategory = Union[
     IncomeCategory,
     ExpenseCategory,
@@ -150,136 +111,269 @@ TransactionCategory = Union[
     ProvisionCategory,
 ]
 
-TableName = Literal[
-    "liquid_accounts",
-    "credit_cards",
-    "stocks",
-    "mutual_funds",
-    "fixed_deposits",
-    "bonds",
-    "external_contacts",
-    "virtual_entities",
-]
-
-ENTITY_TYPE_TO_TABLE: dict[EntityType, TableName] = {
-    EntityType.LIQUID_ACCOUNT: "liquid_accounts",
-    EntityType.CREDIT_CARD: "credit_cards",
-    EntityType.STOCKS: "stocks",
-    EntityType.MUTUAL_FUND: "mutual_funds",
-    EntityType.FIXED_DEPOSIT_ACCOUNT: "fixed_deposits",
-    EntityType.BONDS: "bonds",
-    EntityType.PERSON: "external_contacts",
-    EntityType.COMPANY: "external_contacts",
-    EntityType.VIRTUAL_ENTITY: "virtual_entities",
-}
-
 
 class LiquidAccount(BaseModel):
     name: str
-    account_number_with_mask: str
-    uuid: UUID = Field(default_factory=uuid4)
-    minimum_balance: Decimal = Decimal("0.00")
+    account_number: str
+    minimum_balance: Decimal = Field(ge=0, default=Decimal(0.00))
 
     @property
     def entity_type(self):
         return EntityType.LIQUID_ACCOUNT
 
 
-class CreditCard(BaseModel):
-    name: str
-    card_number_with_mask: str
-    limit: Decimal
-    uuid: UUID = Field(default_factory=uuid4)
+class LiquidAccountCreate(LiquidAccount):
+    pass
 
+
+class LiquidAccountRead(LiquidAccount):
+    id: int
+    uuid: UUID
+
+    @computed_field
     @property
-    def entity_type(self):
-        return EntityType.CREDIT_CARD
+    def display_name(self) -> str:
+        suffix = self.account_number[-4:]
+        return f"{self.name} - {suffix}"
 
 
-class Mutualfund(BaseModel):
+class DematAccountBase(BaseModel):
+    name: str = Field(..., description="Internal nickname for the account")
+    account_number: str = Field(..., min_length=8, description="The unique demat account number")
+    depository_participant: str = Field(..., description="The name of the broker or DP")
+    dp_id: str = Field(..., description="The unique ID of the Depository Participant")
+
+
+class DematAccountCreate(DematAccountBase):
+    pass
+
+
+class DematAccountRead(DematAccountBase):
+    id: int
+    uuid: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CreditCardBase(BaseModel):
+    name: str
+    card_number: str
+    limit: Decimal = Field(gt=0)
+    statement_date: int = Field(ge=1, le=31)
+    grace_period: int = Field(default=20, ge=1)
+
+    @field_validator("card_number")
+    @classmethod
+    def validate_card_number(cls, v: str) -> str:
+        # Basic validation: ensure it's numeric and at least 4 digits
+        if not v.isdigit() or len(v) < 4:
+            raise ValueError("Card number must be numeric and at least 4 digits long")
+        return v
+
+
+# --- Create Schema ---
+class CreditCardCreate(CreditCardBase):
+    pass
+
+
+class CreditCardRead(CreditCardBase):
+    id: int
+    uuid: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    @computed_field
+    @property
+    def display_name(self) -> str:
+        # Formats the name as "Name - 1234"
+        return f"{self.name} - {self.card_number[-4:]}"
+
+    class Config:
+        from_attributes = True
+
+
+class MutualFundBase(BaseModel):
     name: str
     type: MutualFundType
-    nav: Decimal | None
-    uuid: UUID = Field(default_factory=uuid4)
-
-    @property
-    def entity_type(self):
-        return EntityType.MUTUAL_FUND
 
 
-class Stock(BaseModel):
+class MutualFundCreate(MutualFundBase):
+    pass
+
+
+class MutualFundRead(MutualFundBase):
+    id: int
+    name: str
+    uuid: UUID
+
+
+class StockBase(BaseModel):
     symbol: str
-    exchange: str
-    average_price: Decimal
-    quantity: int
-    uuid: UUID = Field(default_factory=uuid4)
-
-    @property
-    def entity_type(self) -> EntityType:
-        return EntityType.STOCKS
+    name: str
 
 
-class FixedDeposit(BaseModel):
-    fd_number_with_mask: str
+class StockCreate(StockBase):
+    pass
+
+
+class StockRead(StockBase):
+    pass
+
+
+class FixedDepositBase(BaseModel):
     bank_name: str
+    fd_identifier: str
     principal_amount: Decimal
     interest_rate: Decimal
     maturity_date: datetime
-    uuid: UUID = Field(default_factory=uuid4)
-
-    @property
-    def entity_type(self) -> EntityType:
-        return EntityType.FIXED_DEPOSIT_ACCOUNT
 
 
-class Bond(BaseModel):
-    isin: str  # International Securities Identification Number
-    name: str
-    coupon_rate: Decimal
-    face_value: Decimal
+class FixedDepositCreate(BaseModel):
+    pass
+
+
+class FixedDepositRead(FixedDepositBase):
+    principal_amount: Decimal
+    interest_rate: Decimal
     maturity_date: datetime
-    uuid: UUID = Field(default_factory=uuid4)
 
+    @computed_field
     @property
-    def entity_type(self) -> EntityType:
-        return EntityType.BONDS
+    def display_name(self) -> str:
+        return f"{self.bank_name} - {self.fd_identifier[-4:]}"
+
+    class Config:
+        from_attributes = True
 
 
-class ExternalContact(BaseModel):
-    """Covers both PERSON, COMPANY"""
-
+class BondBase(BaseModel):
+    isin: str = Field(..., min_length=12, max_length=12, description="International Securities Identification Number")
     name: str
-    category: LendingCategory | LoanCategory
+    coupon_interest_rate: Decimal = Field(ge=0, description="Coupon rate as a decimal (e.g., 0.05 for 5%)")
+    face_value: Decimal = Field(gt=0, description="The face value of the bond")
+    maturity_date: datetime
+
+
+class BondCreate(BondBase):
+    """
+    Used when creating a new Bond.
+    """
+
+    pass
+
+
+# --- Read Schema (What the API returns) ---
+class BondRead(BondBase):
+    """
+    Used when reading a Bond from the database.
+    """
+
+    id: int
+    uuid: UUID
+
+    @computed_field
+    @property
+    def display_name(self) -> str:
+        return f"{self.name}-{self.isin[-4:]}"
+
+    class Config:
+        from_attributes = True
+
+
+class ExternalContactBase(BaseModel):
+    name: str
+    tags: Optional[str] = None
     is_institution: bool = False
-    uuid: UUID = Field(default_factory=uuid4)
+    mobile_number: Optional[str] = None
+    description: Optional[str] = None
 
+    @field_validator("mobile_number")
+    @classmethod
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not v.replace("+", "").isdigit():
+            raise ValueError("Mobile number must be numeric (can include '+')")
+        return v
+
+
+class ExternalContactCreate(ExternalContactBase):
+    pass
+
+
+class ExternalContactRead(ExternalContactBase):
+    id: int
+    uuid: UUID
+
+    @computed_field
     @property
-    def entity_type(self) -> EntityType:
-        return EntityType.COMPANY if self.is_institution else EntityType.PERSON
+    def display_name(self) -> str:
+        if self.mobile_number:
+            return f"{self.name}-{self.mobile_number[-4:]}"
+        else:
+            return self.name
+
+    class Config:
+        from_attributes = True
 
 
-class Other(BaseModel):
-    """Covers the virtual category like travelling, upi_lite, eating,
-    shops and every other expense that I am not sure
-    happened and not able to create a different entity"""
+# --- VirtualEntity Schemas ---
 
+
+class VirtualEntityBase(BaseModel):
     name: str
-    description: str | None = ""
-    tags: list[str | None] = Field(default_factory=list)
-    uuid: UUID = Field(default_factory=uuid4)
+    description: Optional[str] = ""
 
 
-class EntityRegistry(BaseModel):
-    """
-    This acts as the master directory.
-    'account_reference' points to the UUID of a specific LiquidAccount, CreditCard, etc.
-    """
+class VirtualEntityCreate(VirtualEntityBase):
+    pass
 
+
+class VirtualEntityRead(VirtualEntityBase):
+    id: int
+    uuid: UUID
+
+    class Config:
+        from_attributes = True
+
+
+class TagRead(BaseModel):
+    id: int
     name: str
-    account_reference: str
-    entity_type: EntityType
-    table_name: TableName
-    uuid: UUID = Field(default_factory=uuid4)
+
+    class Config:
+        from_attributes = True
+
+
+class TagCreate(BaseModel):
+    name: str
+
+
+class EntityRegistryRead(BaseModel):
+    uuid: UUID
+    name: str
+    entity_type: str
+    table_name: str
+    tags: List[TagRead] = []
+
+    class Config:
+        from_attributes = True
+
+
+class StockTransactionInfoBase(BaseModel):
+    units: int = Field(ge=1)
+    avg_price: Decimal = Field(ge=0)
+    exchange: str
+
+
+class StockTransactionInfoRead(StockTransactionInfoBase):
+    id: int
+    transaction_id: UUID
+    stock_id: UUID
+
+    class Config:
+        from_attributes = True
 
 
 CategoryClass = Type[
@@ -313,114 +407,53 @@ TYPE_TO_ENUM: dict[TransactionType, CategoryClass] = {
 }
 
 
-class TransactionSchema(BaseModel):
-    to_entities_id: UUID
-    from_entities_id: UUID
-    amount: Decimal
-    transaction_datetime: datetime
-    transaction_type: TransactionType
-    transaction_category: TransactionCategory
-    description: Optional[str] = None
-    uuid: UUID = Field(default_factory=uuid4)
-
-    @model_validator(mode="after")
-    def validate_transaction_logic(self) -> "TransactionSchema":
-        if self.amount <= 0:
-            raise ValueError(f"Amount must be positive. Got {self.amount}")
-
-        if self.to_entities_id == self.from_entities_id:
-            raise ValueError("Source and Destination entities cannot be the same.")
-
-        expected_class = TYPE_TO_ENUM.get(self.transaction_type)
-        if not expected_class:
-            raise ValueError(f"No mapping found for type {self.transaction_type}")
-
-        if not isinstance(self.transaction_category, expected_class):
-            raise TypeError(
-                f"Type '{self.transaction_type}' requires {expected_class.__name__}, "
-                f"got {type(self.transaction_category).__name__}."
-            )
-
-        return self
+def get_category_enum(tx_type: TransactionType) -> Type[Union[...]]:
+    """Helper to fetch the correct Enum class based on transaction type."""
+    enum_cls = TYPE_TO_ENUM.get(tx_type)
+    if not enum_cls:
+        raise ValueError(f"'{tx_type}' is not a registered transaction type.")
+    return enum_cls
 
 
-class EntityCreateBase(BaseModel):
-    name: str
-
-
-class LiquidAccountCreate(EntityCreateBase):
-    account_number_with_mask: str
-    minimum_balance: Decimal = Decimal("0.00")
-
-
-class CreditCardCreate(EntityCreateBase):
-    card_number_with_mask: str
-    limit: Decimal
-
-
-class StockCreate(BaseModel):
-    symbol: str
-    exchange: str
-    average_price: Decimal
-    quantity: int
-
-
-class MutualFundCreate(EntityCreateBase):
-    type: MutualFundType
-    nav: Optional[Decimal] = None
-
-
-class FixedDepositCreate(BaseModel):
-    fd_number_with_mask: str
-    bank_name: str
-    principal_amount: Decimal
-    interest_rate: Decimal
-    maturity_date: datetime
-
-
-class BondCreate(EntityCreateBase):
-    isin: str
-    coupon_rate: Decimal
-    face_value: Decimal
-    maturity_date: datetime
-
-
-class ExternalContactCreate(EntityCreateBase):
-    category: LendingCategory | LoanCategory
-    is_institution: bool = False
-
-
-class OtherEntityCreate(EntityCreateBase):
-    tags: List[str | None] = []
-    description: str | None = ""
-
-
-class TransactionCreate(BaseModel):
+class TransactionBase(BaseModel):
     to_entities_id: UUID
     from_entities_id: UUID
     amount: Decimal = Field(gt=0)
-    transaction_datetime: datetime = Field(default_factory=datetime.now)
     transaction_type: TransactionType
-    category: str
-    # Use Optional because it's not in the initial input
-    transaction_category: TransactionCategory = Field(ExpenseCategory.OTHER, exclude=True, repr=False)
     description: Optional[str] = None
+    transaction_datetime: datetime = Field(default_factory=datetime.now)
+
+
+class TransactionCreate(TransactionBase):
+    category: str = Field(..., description="The sub-category string (e.g., 'groceries')")
+    transaction_category: Optional[TransactionCategory] = Field(default=None, exclude=True)
 
     @model_validator(mode="after")
     def validate_and_map_category(self) -> "TransactionCreate":
-        enum_class = TYPE_TO_ENUM.get(self.transaction_type)
+        if self.to_entities_id == self.from_entities_id:
+            raise ValueError("Source and Destination entities cannot be the same.")
 
-        if not enum_class:
-            raise ValueError(f"'{self.transaction_type}' is not a registered transaction type.")
-
+        enum_class = get_category_enum(self.transaction_type)
         try:
-            actual_category_enum = enum_class(self.category.lower())
-            self.transaction_category = actual_category_enum
-
-        except ValueError:
+            self.transaction_category = enum_class(self.category.lower())
+        except ValueError as e:
             allowed = [member.value for member in enum_class]
             raise ValueError(
-                f"Invalid category '{self.category}' for type '{self.transaction_type}'. Must be one of: {allowed}"
-            ) from None
-
+                f"Invalid category '{self.category}' for '{self.transaction_type}'. Must be one of: {allowed}"
+            ) from e
         return self
+
+
+class TransactionRead(TransactionBase):
+    uuid: UUID
+    transaction_category: str
+    tags: List[TagRead] = []
+
+    @field_validator("transaction_category", mode="before")
+    @classmethod
+    def format_category(cls, v) -> str:
+        # If the DB has the Enum, return the value (string)
+        return v.value if hasattr(v, "value") else str(v)
+
+    class Config:
+        from_attributes = True
