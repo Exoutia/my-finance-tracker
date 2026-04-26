@@ -1,23 +1,11 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import StrEnum, auto, unique
-from typing import List, Literal, Optional
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import func
 from sqlmodel import Field, Relationship, SQLModel
-
-TableName = Literal[
-    "liquid_accounts",
-    "demat_accounts",
-    "credit_cards",
-    "stocks",
-    "mutual_funds",
-    "fixed_deposits",
-    "bonds",
-    "external_contacts",
-    "virtual_entities",
-]
 
 
 @unique
@@ -47,20 +35,6 @@ class EntityType(StrEnum):
     COMPANY = auto()
     VIRTUAL_ENTITY = auto()
     CREDIT_CARD = auto()
-
-
-ENTITY_TYPE_TO_TABLE: dict[EntityType, TableName] = {
-    EntityType.LIQUID_ACCOUNT: "liquid_accounts",
-    EntityType.DEMAT_ACCOUNT: "demat_accounts",
-    EntityType.CREDIT_CARD: "credit_cards",
-    EntityType.STOCKS: "stocks",
-    EntityType.MUTUAL_FUND: "mutual_funds",
-    EntityType.FIXED_DEPOSIT_ACCOUNT: "fixed_deposits",
-    EntityType.BONDS: "bonds",
-    EntityType.PERSON: "external_contacts",
-    EntityType.COMPANY: "external_contacts",
-    EntityType.VIRTUAL_ENTITY: "virtual_entities",
-}
 
 
 @unique

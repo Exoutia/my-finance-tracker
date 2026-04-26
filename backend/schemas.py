@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum, auto, unique
-from typing import List, Optional, Type, Union
+from typing import List, Literal, Optional, Type, Union
 from uuid import UUID
 
 from models import EntityType, MutualFundType, TransactionType
@@ -12,6 +12,32 @@ from pydantic import BaseModel, Field, computed_field, field_validator, model_va
 class TransferCategory(StrEnum):
     OTHER = auto()
     SELF_TRANSFER = auto()
+
+
+TableName = Literal[
+    "liquid_accounts",
+    "demat_accounts",
+    "credit_cards",
+    "stocks",
+    "mutual_funds",
+    "fixed_deposits",
+    "bonds",
+    "external_contacts",
+    "virtual_entities",
+]
+
+ENTITY_TYPE_TO_TABLE: dict[EntityType, TableName] = {
+    EntityType.LIQUID_ACCOUNT: "liquid_accounts",
+    EntityType.DEMAT_ACCOUNT: "demat_accounts",
+    EntityType.CREDIT_CARD: "credit_cards",
+    EntityType.STOCKS: "stocks",
+    EntityType.MUTUAL_FUND: "mutual_funds",
+    EntityType.FIXED_DEPOSIT_ACCOUNT: "fixed_deposits",
+    EntityType.BONDS: "bonds",
+    EntityType.PERSON: "external_contacts",
+    EntityType.COMPANY: "external_contacts",
+    EntityType.VIRTUAL_ENTITY: "virtual_entities",
+}
 
 
 @unique
@@ -132,7 +158,7 @@ class LiquidAccountRead(LiquidAccount):
 
     @computed_field
     @property
-    def display_name(self) -> str:
+    def entity_name(self) -> str:
         suffix = self.account_number[-4:]
         return f"{self.name} - {suffix}"
 
@@ -350,11 +376,17 @@ class TagCreate(BaseModel):
     name: str
 
 
-class EntityRegistryRead(BaseModel):
-    uuid: UUID
+class EntityRegistryBase(BaseModel):
     name: str
-    entity_type: str
+    entity_type: EntityType
+
+
+class EntityRegistryCreate(EntityRegistryBase):
     table_name: str
+
+
+class EntityRegistryRead(EntityRegistryBase):
+    uuid: UUID
     tags: List[TagRead] = []
 
     class Config:

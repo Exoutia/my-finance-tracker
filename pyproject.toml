@@ -9,10 +9,10 @@ dependencies = [
     "pydantic-settings>=2.13.1",
     "pytest>=9.0.2",
     "pytest-cov>=7.1.0",
+    "sqlmodel>=0.0.38",
     "uvicorn>=0.43.0",
 ]
 [tool.pytest.ini_options]
-addopts = "--cov=finance --cov-report=html"
 testpaths = ["."]
 
 [dependency-groups]
