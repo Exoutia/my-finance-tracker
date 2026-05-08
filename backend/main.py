@@ -91,7 +91,7 @@ def get_all_entities(session: SessionDep, offset: int = 0, limit: int = Query(de
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
-@app.post("/entities/liquid-account", response_model=schemas.LiquidAccountRead)
+@app.post("/liquid-accounts", response_model=schemas.LiquidAccountRead)
 def create_liquid_account(session: SessionDep, data: schemas.LiquidAccountCreate):
     try:
         data = service.create_liquid_account(session, data)
@@ -100,7 +100,7 @@ def create_liquid_account(session: SessionDep, data: schemas.LiquidAccountCreate
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
-@app.get("/entities/liquid-account", response_model=list[schemas.LiquidAccountRead])
+@app.get("/liquid-accounts", response_model=list[schemas.LiquidAccountRead])
 def get_all_liquid_accounts(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
     try:
         data = service.get_all_liquid_accounts(session, offset, limit)
@@ -109,7 +109,25 @@ def get_all_liquid_accounts(session: SessionDep, offset: int = 0, limit: int = Q
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
-@app.get("/entities/{item_uuid}")
+@app.post("/stocks", response_model=schemas.StockRead)
+def create_stock_entity(session: SessionDep, data: schemas.StockCreate):
+    try:
+        data = service.create_stock(session, data)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal Data error") from err
+
+
+@app.get("/stocks", response_model=list[schemas.StockRead])
+def get_all_stock_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
+    try:
+        data = service.get_all_stock_entity(session, offset, limit)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
+@app.get("/entities/{item_uuid}", response_model=schemas.EntityRegistryRead)
 def get_entity_from_uuid(session: SessionDep, item_uuid: UUID):
     try:
         data = service.get_entity_from_uuid(session, item_uuid)
@@ -118,7 +136,7 @@ def get_entity_from_uuid(session: SessionDep, item_uuid: UUID):
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
-@app.get("/entities/metadata/{item_uuid}", response_model=schemas.EntityRegistryRead)
+@app.get("/entities/metadata/{item_uuid}")
 def get_entity_and_its_other_information(session: SessionDep, item_uuid: UUID):
     try:
         data = service.get_dynamic_joined_data(session, item_uuid)

@@ -1,7 +1,7 @@
 from uuid import UUID
 
 import schemas
-from models import EntityRegistry, LiquidAccount, Transaction
+from models import EntityRegistry, LiquidAccount, Stock, Transaction
 from sqlmodel import Session, select
 
 
@@ -72,11 +72,7 @@ def _create_entity(db: Session, entity_create_data: schemas.EntityRegistryCreate
 
 
 def get_entity_from_uuid(db: Session, item_uuid: UUID):
-    data = db.exec(
-        select(EntityRegistry, LiquidAccount)
-        .where(EntityRegistry.uuid == LiquidAccount.uuid)
-        .where(EntityRegistry.uuid == item_uuid)
-    ).first()
+    data = db.exec(select(EntityRegistry).where(EntityRegistry.uuid == item_uuid)).first()
     return data
 
 
@@ -95,7 +91,6 @@ def get_dynamic_joined_data(db: Session, item_uuid: UUID):
         raise ValueError(f"Table {target_table_name} not found in metadata")
 
     target_table = EntityRegistry.metadata.tables[target_table_name]
-    print(target_table)
     statement = (
         select(EntityRegistry, target_table)
         .where(EntityRegistry.uuid == target_table.c.uuid)  # .c access columns
@@ -107,22 +102,17 @@ def get_dynamic_joined_data(db: Session, item_uuid: UUID):
     if not result:
         return None
 
-    # Access by 'mapping' to get dictionary-like access to the row
     row_dict = result._mapping
 
-    # 1. Get the EntityRegistry object (the first element of the select)
     registry_obj = row_dict[EntityRegistry]
+    other_table = {}
+    for i, v in row_dict.items():
+        if i == "EntityRegistry":
+            continue
+        other_table[i] = v
 
-    # 2. Convert registry object to a dict
-    response = registry_obj.model_dump()
-
-    # 3. Add all columns from the dynamic table
-    # We filter out the 'uuid' or 'id' if you don't want duplicates
-    for column_name, value in row_dict.items():
-        if column_name not in response:  # Don't overwrite base registry data
-            response[column_name] = value
-
-    return response
+    res = {"entity_registry": registry_obj, "other_table": other_table}
+    return res
 
 
 def create_liquid_account(db: Session, data: schemas.LiquidAccountCreate):
@@ -147,3 +137,32 @@ def create_liquid_account(db: Session, data: schemas.LiquidAccountCreate):
     except Exception as e:
         db.rollback()
         raise DBException("Failed to create account") from e
+
+
+def create_stock(db: Session, data: schemas.StockCreate):
+    entity_type = schemas.EntityType.STOCKS
+    registry_data = schemas.EntityRegistryCreate(
+        name=f"{data.name}-{data.symbol}",
+        entity_type=entity_type,
+        table_name=schemas.ENTITY_TYPE_TO_TABLE[entity_type],
+    )
+    entity = _create_entity(db, registry_data)
+
+    new_account = Stock(name=data.name, symbol=data.symbol, uuid=entity.uuid)
+
+    db.add(new_account)
+    try:
+        db.commit()
+        db.refresh(new_account)
+        return new_account
+    except Exception as e:
+        db.rollback()
+        raise DBException("Failed to create stock") from e
+
+
+def get_all_stock_entity(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(select(Stock).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
