@@ -489,3 +489,8 @@ class TransactionRead(TransactionBase):
 
     class Config:
         from_attributes = True
+
+
+class EntityLiquidResponse(BaseModel):
+    EntityRegistry: EntityRegistryRead
+    LiquidAccount: LiquidAccountRead

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import schemas
 from models import EntityRegistry, LiquidAccount, Transaction
 from sqlmodel import Session, select
@@ -67,6 +69,60 @@ def _create_entity(db: Session, entity_create_data: schemas.EntityRegistryCreate
         return new_entity
     except Exception as e:
         raise DBException from e
+
+
+def get_entity_from_uuid(db: Session, item_uuid: UUID):
+    data = db.exec(
+        select(EntityRegistry, LiquidAccount)
+        .where(EntityRegistry.uuid == LiquidAccount.uuid)
+        .where(EntityRegistry.uuid == item_uuid)
+    ).first()
+    return data
+
+
+def get_dynamic_joined_data(db: Session, item_uuid: UUID):
+    # 1. Fetch the registry entry first to get the table name
+    registry_entry = db.exec(select(EntityRegistry).where(EntityRegistry.uuid == item_uuid)).first()
+
+    if not registry_entry:
+        return None
+
+    # 2. Look up the table object dynamically from metadata
+    # registry_entry.table_name must match the __tablename__ in your classes
+    target_table_name = registry_entry.table_name
+
+    if target_table_name not in EntityRegistry.metadata.tables:
+        raise ValueError(f"Table {target_table_name} not found in metadata")
+
+    target_table = EntityRegistry.metadata.tables[target_table_name]
+    print(target_table)
+    statement = (
+        select(EntityRegistry, target_table)
+        .where(EntityRegistry.uuid == target_table.c.uuid)  # .c access columns
+        .where(EntityRegistry.uuid == item_uuid)
+    )
+
+    result = db.exec(statement).first()
+
+    if not result:
+        return None
+
+    # Access by 'mapping' to get dictionary-like access to the row
+    row_dict = result._mapping
+
+    # 1. Get the EntityRegistry object (the first element of the select)
+    registry_obj = row_dict[EntityRegistry]
+
+    # 2. Convert registry object to a dict
+    response = registry_obj.model_dump()
+
+    # 3. Add all columns from the dynamic table
+    # We filter out the 'uuid' or 'id' if you don't want duplicates
+    for column_name, value in row_dict.items():
+        if column_name not in response:  # Don't overwrite base registry data
+            response[column_name] = value
+
+    return response
 
 
 def create_liquid_account(db: Session, data: schemas.LiquidAccountCreate):

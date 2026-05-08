@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 import schemas
 import service
@@ -103,6 +104,24 @@ def create_liquid_account(session: SessionDep, data: schemas.LiquidAccountCreate
 def get_all_liquid_accounts(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
     try:
         data = service.get_all_liquid_accounts(session, offset, limit)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
+@app.get("/entities/{item_uuid}")
+def get_entity_from_uuid(session: SessionDep, item_uuid: UUID):
+    try:
+        data = service.get_entity_from_uuid(session, item_uuid)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
+@app.get("/entities/metadata/{item_uuid}", response_model=schemas.EntityRegistryRead)
+def get_entity_and_its_other_information(session: SessionDep, item_uuid: UUID):
+    try:
+        data = service.get_dynamic_joined_data(session, item_uuid)
         return data
     except service.DBException as err:
         raise HTTPException(status_code=500, detail="Internal data error") from err
