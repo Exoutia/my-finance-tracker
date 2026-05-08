@@ -77,14 +77,11 @@ def get_entity_from_uuid(db: Session, item_uuid: UUID):
 
 
 def get_dynamic_joined_data(db: Session, item_uuid: UUID):
-    # 1. Fetch the registry entry first to get the table name
     registry_entry = db.exec(select(EntityRegistry).where(EntityRegistry.uuid == item_uuid)).first()
 
     if not registry_entry:
         return None
 
-    # 2. Look up the table object dynamically from metadata
-    # registry_entry.table_name must match the __tablename__ in your classes
     target_table_name = registry_entry.table_name
 
     if target_table_name not in EntityRegistry.metadata.tables:
@@ -92,7 +89,7 @@ def get_dynamic_joined_data(db: Session, item_uuid: UUID):
 
     target_table = EntityRegistry.metadata.tables[target_table_name]
     statement = (
-        select(EntityRegistry, target_table)
+        select(EntityRegistry, target_table)  # type: ignore
         .where(EntityRegistry.uuid == target_table.c.uuid)  # .c access columns
         .where(EntityRegistry.uuid == item_uuid)
     )
