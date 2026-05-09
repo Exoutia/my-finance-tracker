@@ -1,7 +1,7 @@
 from uuid import UUID
 
 import schemas
-from models import Bond, DematAccount, EntityRegistry, FixedDeposit, LiquidAccount, Stock, Transaction
+from models import Bond, DematAccount, EntityRegistry, FixedDeposit, LiquidAccount, MutualFund, Stock, Transaction
 from sqlmodel import Session, select
 
 
@@ -44,7 +44,7 @@ def get_transaction_types_to_categories():
         raise ServiceException(e) from e
 
 
-def _create_entity(db: Session, entity_create_data: schemas.EntityRegistryCreate):
+def _create_entity(db: Session, entity_create_data: schemas.EntityRegistryCreate) -> EntityRegistry:
     try:
         new_entity = EntityRegistry.model_validate(entity_create_data.model_dump())
         db.add(new_entity)
@@ -230,6 +230,35 @@ def create_demat_account(db: Session, data: schemas.DematAccountCreate):
     except Exception as e:
         db.rollback()
         raise DBException("Failed to create stock") from e
+
+
+def create_mutual_fund(db: Session, data: schemas.MutualFundCreate):
+    entity_type = schemas.EntityType.MUTUAL_FUND
+    registry_data = schemas.EntityRegistryCreate(
+        name=data.name,
+        entity_type=entity_type,
+        table_name=schemas.ENTITY_TYPE_TO_TABLE[entity_type],
+    )
+    entity = _create_entity(db, registry_data)
+
+    new_account = MutualFund(name=data.name, type=data.type, uuid=entity.uuid)
+
+    db.add(new_account)
+    try:
+        db.commit()
+        db.refresh(new_account)
+        return new_account
+    except Exception as e:
+        db.rollback()
+        raise DBException("Failed to create stock") from e
+
+
+def get_all_mutual_fund_entity(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(select(MutualFund).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
 
 
 def get_all_demat_account_entity(db: Session, offset: int, limit: int):
