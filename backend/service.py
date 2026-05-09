@@ -1,7 +1,7 @@
 from uuid import UUID
 
 import schemas
-from models import EntityRegistry, LiquidAccount, Stock, Transaction
+from models import Bond, EntityRegistry, LiquidAccount, Stock, Transaction
 from sqlmodel import Session, select
 
 
@@ -155,6 +155,42 @@ def create_stock(db: Session, data: schemas.StockCreate):
     except Exception as e:
         db.rollback()
         raise DBException("Failed to create stock") from e
+
+
+def create_bond(db: Session, data: schemas.BondCreate):
+    entity_type = schemas.EntityType.STOCKS
+    registry_data = schemas.EntityRegistryCreate(
+        name=f"{data.name}-{data.isin[-4:]}",
+        entity_type=entity_type,
+        table_name=schemas.ENTITY_TYPE_TO_TABLE[entity_type],
+    )
+    entity = _create_entity(db, registry_data)
+
+    new_account = Bond(
+        name=data.name,
+        isin=data.isin,
+        uuid=entity.uuid,
+        face_value=data.face_value,
+        maturity_date=data.maturity_date,
+        coupon_interest_rate=data.coupon_interest_rate,
+    )
+
+    db.add(new_account)
+    try:
+        db.commit()
+        db.refresh(new_account)
+        return new_account
+    except Exception as e:
+        db.rollback()
+        raise DBException("Failed to create stock") from e
+
+
+def get_all_bond_entity(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(select(Stock).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
 
 
 def get_all_stock_entity(db: Session, offset: int, limit: int):

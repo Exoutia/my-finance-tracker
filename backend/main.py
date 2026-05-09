@@ -127,6 +127,24 @@ def get_all_stock_entity(session: SessionDep, offset: int = 0, limit: int = Quer
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
+@app.post("/bonds", response_model=schemas.BondRead)
+def create_bond_entity(session: SessionDep, data: schemas.BondCreate):
+    try:
+        data = service.create_bond(session, data)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal Data error") from err
+
+
+@app.get("/bonds", response_model=list[schemas.StockRead])
+def get_all_bond_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
+    try:
+        data = service.get_all_bond_entity(session, offset, limit)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
 @app.get("/entities/{item_uuid}", response_model=schemas.EntityRegistryRead)
 def get_entity_from_uuid(session: SessionDep, item_uuid: UUID):
     try:
