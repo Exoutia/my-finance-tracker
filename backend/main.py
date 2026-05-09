@@ -163,7 +163,7 @@ def get_all_fixed_deposit_entity(session: SessionDep, offset: int = 0, limit: in
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
-@app.post("/demat-account", response_model=schemas.DematAccountRead)
+@app.post("/demat-accounts", response_model=schemas.DematAccountRead)
 def create_demat_acccount(session: SessionDep, data: schemas.DematAccountCreate):
     try:
         data = service.create_demat_account(session, data)
@@ -172,10 +172,28 @@ def create_demat_acccount(session: SessionDep, data: schemas.DematAccountCreate)
         raise HTTPException(status_code=500, detail="Internal Data error") from err
 
 
-@app.get("/demat-account", response_model=list[schemas.DematAccountRead])
+@app.get("/demat-accounts", response_model=list[schemas.DematAccountRead])
 def get_all_demat_account_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
     try:
         data = service.get_all_demat_account_entity(session, offset, limit)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
+@app.post("/credit-cards", response_model=schemas.CreditCardRead)
+def create_credit_card_entity(session: SessionDep, data: schemas.CreditCardCreate):
+    try:
+        data = service.create_credit_card_entity(session, data)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal Data error") from err
+
+
+@app.get("/credit-cards", response_model=list[schemas.CreditCardRead])
+def get_all_credit_card_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
+    try:
+        data = service.get_all_credit_card_entity(session, offset, limit)
         return data
     except service.DBException as err:
         raise HTTPException(status_code=500, detail="Internal data error") from err

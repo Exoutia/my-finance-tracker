@@ -1,7 +1,17 @@
 from uuid import UUID
 
 import schemas
-from models import Bond, DematAccount, EntityRegistry, FixedDeposit, LiquidAccount, MutualFund, Stock, Transaction
+from models import (
+    Bond,
+    CreditCard,
+    DematAccount,
+    EntityRegistry,
+    FixedDeposit,
+    LiquidAccount,
+    MutualFund,
+    Stock,
+    Transaction,
+)
 from sqlmodel import Session, select
 
 
@@ -251,6 +261,42 @@ def create_mutual_fund(db: Session, data: schemas.MutualFundCreate):
     except Exception as e:
         db.rollback()
         raise DBException("Failed to create stock") from e
+
+
+def create_credit_card_entity(db: Session, data: schemas.CreditCardCreate):
+    entity_type = schemas.EntityType.CREDIT_CARD
+    registry_data = schemas.EntityRegistryCreate(
+        name=f"{data.name}-{data.card_number[-4:]}",
+        entity_type=entity_type,
+        table_name=schemas.ENTITY_TYPE_TO_TABLE[entity_type],
+    )
+    entity = _create_entity(db, registry_data)
+
+    new_account = CreditCard(
+        name=data.name,
+        card_number=data.card_number,
+        limit=data.limit,
+        grace_period=data.grace_period,
+        statement_date=data.statement_date,
+        uuid=entity.uuid,
+    )
+
+    db.add(new_account)
+    try:
+        db.commit()
+        db.refresh(new_account)
+        return new_account
+    except Exception as e:
+        db.rollback()
+        raise DBException("Failed to create stock") from e
+
+
+def get_all_credit_card_entity(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(select(CreditCard).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
 
 
 def get_all_mutual_fund_entity(db: Session, offset: int, limit: int):
