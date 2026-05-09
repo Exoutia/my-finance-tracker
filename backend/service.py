@@ -6,6 +6,7 @@ from models import (
     CreditCard,
     DematAccount,
     EntityRegistry,
+    ExternalContact,
     FixedDeposit,
     LiquidAccount,
     MutualFund,
@@ -184,7 +185,7 @@ def create_bond(db: Session, data: schemas.BondCreate):
         return new_account
     except Exception as e:
         db.rollback()
-        raise DBException("Failed to create stock") from e
+        raise DBException("Failed to create bond") from e
 
 
 def create_fixed_deposit(db: Session, data: schemas.FixedDepositCreate):
@@ -212,7 +213,7 @@ def create_fixed_deposit(db: Session, data: schemas.FixedDepositCreate):
         return new_account
     except Exception as e:
         db.rollback()
-        raise DBException("Failed to create stock") from e
+        raise DBException("Failed to create fixed deposit") from e
 
 
 def create_demat_account(db: Session, data: schemas.DematAccountCreate):
@@ -239,7 +240,7 @@ def create_demat_account(db: Session, data: schemas.DematAccountCreate):
         return new_account
     except Exception as e:
         db.rollback()
-        raise DBException("Failed to create stock") from e
+        raise DBException("Failed to create demat account") from e
 
 
 def create_mutual_fund(db: Session, data: schemas.MutualFundCreate):
@@ -260,7 +261,7 @@ def create_mutual_fund(db: Session, data: schemas.MutualFundCreate):
         return new_account
     except Exception as e:
         db.rollback()
-        raise DBException("Failed to create stock") from e
+        raise DBException("Failed to create mutual fund") from e
 
 
 def create_credit_card_entity(db: Session, data: schemas.CreditCardCreate):
@@ -288,7 +289,66 @@ def create_credit_card_entity(db: Session, data: schemas.CreditCardCreate):
         return new_account
     except Exception as e:
         db.rollback()
-        raise DBException("Failed to create stock") from e
+        raise DBException("Failed to create credit card entity") from e
+
+
+def create_external_contract(db: Session, data: schemas.ExternalContactCreate):
+    is_person = not data.is_institution
+    if is_person:
+        entity_type = schemas.EntityType.PERSON
+    else:
+        entity_type = schemas.EntityType.COMPANY
+
+    registry_data = schemas.EntityRegistryCreate(
+        name=f"{data.name}-{data.mobile_number[-4:] if data.mobile_number else 'XXX-XXX-XXXX'}",
+        entity_type=entity_type,
+        table_name=schemas.ENTITY_TYPE_TO_TABLE[entity_type],
+    )
+    entity = _create_entity(db, registry_data)
+
+    new_account = ExternalContact(
+        name=data.name,
+        description=data.description,
+        is_institution=data.is_institution,
+        mobile_number=data.mobile_number,
+        uuid=entity.uuid,
+        tags=data.tags,
+    )
+
+    db.add(new_account)
+    try:
+        db.commit()
+        db.refresh(new_account)
+        return new_account
+    except Exception as e:
+        db.rollback()
+        raise DBException("Failed to create external contract") from e
+
+
+def get_all_external_contract(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(select(ExternalContact).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
+
+
+def get_all_person_entity(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(
+            select(ExternalContact).where(not ExternalContact.is_institution).offset(offset).limit(limit)
+        ).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
+
+
+def get_all_company_entity(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(select(ExternalContact).where(ExternalContact.is_institution).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
 
 
 def get_all_credit_card_entity(db: Session, offset: int, limit: int):

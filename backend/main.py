@@ -199,6 +199,42 @@ def get_all_credit_card_entity(session: SessionDep, offset: int = 0, limit: int 
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
+@app.post("/external-contracts", response_model=schemas.ExternalContactRead)
+def create_external_contract(session: SessionDep, data: schemas.ExternalContactCreate):
+    try:
+        data = service.create_external_contract(session, data)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal Data error") from err
+
+
+@app.get("/external-contracts", response_model=list[schemas.ExternalContactRead])
+def get_all_external_contract(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
+    try:
+        data = service.get_all_external_contract(session, offset, limit)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
+@app.get("/external-contract/persons", response_model=list[schemas.ExternalContactRead])
+def get_all_person_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
+    try:
+        data = service.get_all_person_entity(session, offset, limit)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
+@app.get("/external-contract/companies", response_model=list[schemas.ExternalContactRead])
+def get_all_company_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
+    try:
+        data = service.get_all_company_entity(session, offset, limit)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
 @app.post("/mutual-funds", response_model=schemas.MutualFundRead)
 def create_mutual_fund(session: SessionDep, data: schemas.MutualFundCreate):
     try:
