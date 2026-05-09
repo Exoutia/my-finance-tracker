@@ -163,6 +163,24 @@ def get_all_fixed_deposit_entity(session: SessionDep, offset: int = 0, limit: in
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
+@app.post("/demat-account", response_model=schemas.DematAccountRead)
+def create_demat_acccount(session: SessionDep, data: schemas.DematAccountCreate):
+    try:
+        data = service.create_demat_account(session, data)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal Data error") from err
+
+
+@app.get("/demat-account", response_model=list[schemas.DematAccountRead])
+def get_all_demat_account_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
+    try:
+        data = service.get_all_demat_account_entity(session, offset, limit)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
 @app.get("/entities/{item_uuid}", response_model=schemas.EntityRegistryRead)
 def get_entity_from_uuid(session: SessionDep, item_uuid: UUID):
     try:

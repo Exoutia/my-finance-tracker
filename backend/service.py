@@ -1,7 +1,7 @@
 from uuid import UUID
 
 import schemas
-from models import Bond, EntityRegistry, FixedDeposit, LiquidAccount, Stock, Transaction
+from models import Bond, DematAccount, EntityRegistry, FixedDeposit, LiquidAccount, Stock, Transaction
 from sqlmodel import Session, select
 
 
@@ -203,6 +203,41 @@ def create_fixed_deposit(db: Session, data: schemas.FixedDepositCreate):
     except Exception as e:
         db.rollback()
         raise DBException("Failed to create stock") from e
+
+
+def create_demat_account(db: Session, data: schemas.DematAccountCreate):
+    entity_type = schemas.EntityType.DEMAT_ACCOUNT
+    registry_data = schemas.EntityRegistryCreate(
+        name=f"{data.name}-{data.account_number[-4:]}",
+        entity_type=entity_type,
+        table_name=schemas.ENTITY_TYPE_TO_TABLE[entity_type],
+    )
+    entity = _create_entity(db, registry_data)
+
+    new_account = DematAccount(
+        name=data.name,
+        account_number=data.account_number,
+        depository_participant=data.depository_participant,
+        dp_id=data.dp_id,
+        uuid=entity.uuid,
+    )
+
+    db.add(new_account)
+    try:
+        db.commit()
+        db.refresh(new_account)
+        return new_account
+    except Exception as e:
+        db.rollback()
+        raise DBException("Failed to create stock") from e
+
+
+def get_all_demat_account_entity(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(select(DematAccount).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
 
 
 def get_all_fixed_deposit_entity(db: Session, offset: int, limit: int):
