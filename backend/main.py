@@ -74,7 +74,7 @@ def create_transaction(session: SessionDep, data: schemas.TransactionCreate):
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
-@app.get("/transaction/transaction_types_to_categories")
+@app.get("/transaction/transaction-types-to-categories")
 def get_transaction_types_to_categories():
     try:
         return service.get_transaction_types_to_categories()
@@ -140,6 +140,24 @@ def create_bond_entity(session: SessionDep, data: schemas.BondCreate):
 def get_all_bond_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
     try:
         data = service.get_all_bond_entity(session, offset, limit)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
+@app.post("/fixed-depsosits", response_model=schemas.FixedDepositRead)
+def create_fixed_deposit(session: SessionDep, data: schemas.FixedDepositCreate):
+    try:
+        data = service.create_fixed_deposit(session, data)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal Data error") from err
+
+
+@app.get("/fixed-depsosits", response_model=list[schemas.FixedDepositRead])
+def get_all_fixed_deposit_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
+    try:
+        data = service.get_all_fixed_deposit_entity(session, offset, limit)
         return data
     except service.DBException as err:
         raise HTTPException(status_code=500, detail="Internal data error") from err

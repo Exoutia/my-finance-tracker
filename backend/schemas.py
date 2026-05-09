@@ -257,7 +257,7 @@ class FixedDepositBase(BaseModel):
     maturity_date: datetime
 
 
-class FixedDepositCreate(BaseModel):
+class FixedDepositCreate(FixedDepositBase):
     pass
 
 

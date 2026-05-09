@@ -1,7 +1,7 @@
 from uuid import UUID
 
 import schemas
-from models import Bond, EntityRegistry, LiquidAccount, Stock, Transaction
+from models import Bond, EntityRegistry, FixedDeposit, LiquidAccount, Stock, Transaction
 from sqlmodel import Session, select
 
 
@@ -25,14 +25,6 @@ def create_transaction(db: Session, transaction_data: schemas.TransactionCreate)
         raise DBException from e
 
 
-def get_all_liquid_accounts(db: Session, offset: int, limit: int):
-    try:
-        data = db.exec(select(LiquidAccount).offset(offset).limit(limit)).all()
-        return data
-    except Exception as e:
-        raise DBException(e) from e
-
-
 def get_all_transactions(offset: int, limit: int, db: Session):
     try:
         data = db.exec(select(Transaction).offset(offset).limit(limit)).all()
@@ -52,14 +44,6 @@ def get_transaction_types_to_categories():
         raise ServiceException(e) from e
 
 
-def get_all_entities(offset: int, limit: int, db: Session):
-    try:
-        data = db.exec(select(EntityRegistry).offset(offset).limit(limit)).all()
-        return data
-    except Exception as e:
-        raise DBException(e) from e
-
-
 def _create_entity(db: Session, entity_create_data: schemas.EntityRegistryCreate):
     try:
         new_entity = EntityRegistry.model_validate(entity_create_data.model_dump())
@@ -69,6 +53,14 @@ def _create_entity(db: Session, entity_create_data: schemas.EntityRegistryCreate
         return new_entity
     except Exception as e:
         raise DBException from e
+
+
+def get_all_entities(offset: int, limit: int, db: Session):
+    try:
+        data = db.exec(select(EntityRegistry).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
 
 
 def get_entity_from_uuid(db: Session, item_uuid: UUID):
@@ -185,9 +177,45 @@ def create_bond(db: Session, data: schemas.BondCreate):
         raise DBException("Failed to create stock") from e
 
 
+def create_fixed_deposit(db: Session, data: schemas.FixedDepositCreate):
+    entity_type = schemas.EntityType.FIXED_DEPOSIT_ACCOUNT
+    registry_data = schemas.EntityRegistryCreate(
+        name=f"{data.bank_name}-{data.fd_identifier[-4:]}",
+        entity_type=entity_type,
+        table_name=schemas.ENTITY_TYPE_TO_TABLE[entity_type],
+    )
+    entity = _create_entity(db, registry_data)
+
+    new_account = FixedDeposit(
+        bank_name=data.bank_name,
+        fd_identifier=data.fd_identifier,
+        interest_rate=data.interest_rate,
+        maturity_date=data.maturity_date,
+        principal_amount=data.principal_amount,
+        uuid=entity.uuid,
+    )
+
+    db.add(new_account)
+    try:
+        db.commit()
+        db.refresh(new_account)
+        return new_account
+    except Exception as e:
+        db.rollback()
+        raise DBException("Failed to create stock") from e
+
+
+def get_all_fixed_deposit_entity(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(select(FixedDeposit).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
+
+
 def get_all_bond_entity(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(Stock).offset(offset).limit(limit)).all()
+        data = db.exec(select(Bond).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -196,6 +224,14 @@ def get_all_bond_entity(db: Session, offset: int, limit: int):
 def get_all_stock_entity(db: Session, offset: int, limit: int):
     try:
         data = db.exec(select(Stock).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
+
+
+def get_all_liquid_accounts(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(select(LiquidAccount).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
