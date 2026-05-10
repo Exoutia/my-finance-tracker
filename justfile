@@ -8,4 +8,4 @@ backend-server:
     cd ./backend && uv run fastapi dev
 
 frontend-server:
-    cd ./fronted && deno task dev
+    cd ./frontend && deno task dev
