@@ -1,6 +1,6 @@
 import { BadgeIndianRupee } from "lucide-react";
 import "./App.css";
-import { ModeToggle } from "@/components/toggle-theme-button.tsx";
+import { ModeToggle } from "@/components/theme-provider/toggle-theme-button.tsx";
 
 function App() {
   return (
