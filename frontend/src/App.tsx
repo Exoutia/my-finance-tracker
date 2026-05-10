@@ -5,7 +5,7 @@ import { ModeToggle } from "@/components/toggle-theme-button.tsx";
 function App() {
   return (
     <>
-      <nav className="fixed left-0 top-0 z-20 mx-auto flex h-[70px] w-full items-center border-b-4 border-border bg-secondary-background px-5">
+      <nav className="fixed left-0 top-0 z-20 mx-auto flex h-17.5 w-full items-center border-b-4 border-border bg-secondary-background px-5">
         <div className="flex justify-between w-full m-10">
           <div className="flex gap-2 justify-center items-center">
             <BadgeIndianRupee />
