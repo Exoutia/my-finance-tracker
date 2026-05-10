@@ -12,6 +12,7 @@ from models import (
     MutualFund,
     Stock,
     Transaction,
+    VirtualEntity,
 )
 from sqlmodel import Session, select
 
@@ -323,6 +324,36 @@ def create_external_contract(db: Session, data: schemas.ExternalContactCreate):
     except Exception as e:
         db.rollback()
         raise DBException("Failed to create external contract") from e
+
+
+def create_virtual_entity(db: Session, data: schemas.VirtualEntityCreate):
+    entity_type = schemas.EntityType.VIRTUAL_ENTITY
+
+    registry_data = schemas.EntityRegistryCreate(
+        name=f"{data.name}",
+        entity_type=entity_type,
+        table_name=schemas.ENTITY_TYPE_TO_TABLE[entity_type],
+    )
+    entity = _create_entity(db, registry_data)
+
+    new_account = VirtualEntity(name=data.name, description=data.description, uuid=entity.uuid)
+
+    db.add(new_account)
+    try:
+        db.commit()
+        db.refresh(new_account)
+        return new_account
+    except Exception as e:
+        db.rollback()
+        raise DBException("Failed to create external contract") from e
+
+
+def get_all_virtual_entity(db: Session, offset: int, limit: int):
+    try:
+        data = db.exec(select(VirtualEntity).offset(offset).limit(limit)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
 
 
 def get_all_external_contract(db: Session, offset: int, limit: int):

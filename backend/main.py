@@ -235,6 +235,24 @@ def get_all_company_entity(session: SessionDep, offset: int = 0, limit: int = Qu
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
+@app.post("/virtual-entity", response_model=schemas.VirtualEntityRead)
+def create_virutal_entity(session: SessionDep, data: schemas.VirtualEntityCreate):
+    try:
+        data = service.create_virtual_entity(session, data)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal Data error") from err
+
+
+@app.get("/virtual-entity", response_model=list[schemas.VirtualEntityRead])
+def get_all_virtual_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
+    try:
+        data = service.get_all_virtual_entity(session, offset, limit)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
 @app.post("/mutual-funds", response_model=schemas.MutualFundRead)
 def create_mutual_fund(session: SessionDep, data: schemas.MutualFundCreate):
     try:
