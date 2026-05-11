@@ -3,11 +3,12 @@
     "@/": "./"
   },
   "lint": {
-    "include": ["src/"],
+    "include": ["src/", "components/", "lib/"],
     "exclude": ["src/testdata/", "src/fixtures/**/*.ts"],
     "rules": {
       "tags": ["recommended"],
       "include": ["ban-untagged-todo"]
     }
-  }
+  },
+  "allowScripts": ["npm:msw@2.14.5"]
 }
