@@ -162,7 +162,7 @@ def create_stock(db: Session, data: schemas.StockCreate):
 
 
 def create_bond(db: Session, data: schemas.BondCreate):
-    entity_type = schemas.EntityType.STOCKS
+    entity_type = schemas.EntityType.BONDS
     registry_data = schemas.EntityRegistryCreate(
         name=f"{data.name}-{data.isin[-4:]}",
         entity_type=entity_type,
