@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table.tsx";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { CopyButton } from "@/components/copybutton.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
 
 type Entity = {
   name: string;
@@ -60,25 +61,6 @@ const columns: ColumnDef<Entity>[] = [
     ),
   },
   {
-    accessorKey: "tags",
-    header: "Tags",
-    cell: ({ row }) => {
-      // 1. Get the array from the row
-      const tags: string[] = row.getValue("tags") || [];
-
-      // 2. Return the mapped elements wrapped in a container
-      return (
-        <div className="flex gap-2">
-          {tags.map((tag, index) => (
-            <span key={index} className="badge">
-              {tag}
-            </span>
-          ))}
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: "uuid",
     header: "UUID",
     cell: ({ row }) => {
@@ -89,6 +71,24 @@ const columns: ColumnDef<Entity>[] = [
             {uuid.slice(0, 8)}...
           </code>
           <CopyButton value={uuid} />
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "tags",
+    header: "Tags",
+    cell: ({ row }) => {
+      const val = row.getValue("tags");
+      const tags = (Array.isArray(val) && val.length >= 1) ? val : ["N/A"];
+
+      return (
+        <div className="flex gap-2">
+          {tags.map((tag, index) => (
+            <Badge variant="colorful" tagName={tag} key={index}>
+              {tag}
+            </Badge>
+          ))}
         </div>
       );
     },
@@ -110,7 +110,7 @@ export function Entities() {
 
   return (
     <div className="m-10">
-      <Table>
+      <Table className="max-w-3/5">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
