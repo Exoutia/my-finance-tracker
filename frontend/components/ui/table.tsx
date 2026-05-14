@@ -9,7 +9,7 @@ const tableCellVariants = cva(
     variants: {
       variant: {
         default: "",
-        skeleton: "bg-overlay m-0",
+        skeleton: "bg-overlay p-1",
       },
     },
     defaultVariants: {
