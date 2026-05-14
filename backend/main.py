@@ -91,6 +91,14 @@ def get_all_entities(session: SessionDep, offset: int = 0, limit: int = Query(de
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
+@app.get("/entities/entity-types")
+def get_entity_type():
+    try:
+        return [i for i in schemas.EntityType]
+    except Exception as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
 @app.post("/liquid-accounts", response_model=schemas.LiquidAccountRead)
 def create_liquid_account(session: SessionDep, data: schemas.LiquidAccountCreate):
     try:

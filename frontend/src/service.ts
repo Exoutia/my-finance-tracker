@@ -1,6 +1,16 @@
 const BASE_URL = "/api";
 
-export async function apiRequest(endpoint: string, options: RequestInit = {}) {
+export interface Entity {
+  name: string;
+  entity_type: string;
+  uuid: string;
+  tags: string[];
+}
+
+export async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+) {
   const dbPassword = sessionStorage.getItem("db_password");
 
   const headers = new Headers(options.headers);
@@ -23,17 +33,27 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     throw new Error(error.detail || "API request failed");
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
 }
 
-export async function getEntities() {
+export async function getEntities(): Promise<Entity[] | null> {
   try {
-    const data = await apiRequest("/entities");
-    console.log("Finance Data:", data);
+    const data = await apiRequest<Entity[]>("/entities");
     return data;
   } catch (error) {
-    console.error("Failed to fetch data:", error.message);
     // You could trigger a toast notification here
+    console.error(error);
+    return null;
+  }
+}
+
+export async function getEntityTypes(): Promise<string[] | null> {
+  try {
+    const data = await apiRequest<string[]>("/entities/entity-types");
+    return data;
+  } catch (error) {
+    // You could trigger a toast notification here
+    console.error(error);
     return null;
   }
 }
