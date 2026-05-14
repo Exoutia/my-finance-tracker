@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getEntities } from "@/src/service.ts";
+import { type Entity, getEntities } from "@/src/service.ts";
 import {
   type ColumnDef,
   flexRender,
@@ -18,13 +18,6 @@ import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { CopyButton } from "@/components/copybutton.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { TableSkeleton } from "@/components/sekletons/skeleton-table.tsx";
-
-type Entity = {
-  name: string;
-  entity_type: string;
-  uuid: string;
-  tags: string[];
-};
 
 const columns: ColumnDef<Entity>[] = [
   {
