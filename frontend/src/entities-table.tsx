@@ -2,8 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { type Entity, getEntities } from "@/src/service.ts";
 import {
   type ColumnDef,
+  type ColumnFiltersState,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -18,6 +23,9 @@ import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { CopyButton } from "@/components/copybutton.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { TableSkeleton } from "@/components/sekletons/skeleton-table.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import React from "react";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
 
 const columns: ColumnDef<Entity>[] = [
   {
@@ -51,7 +59,9 @@ const columns: ColumnDef<Entity>[] = [
     accessorKey: "entity_type",
     header: "Entity Type",
     cell: ({ row }) => (
-      <div className="capitalize">{row.getValue("entity_type")}</div>
+      <div className="capitalize">
+        {row.getValue("entity_type").split("_").join(" ")}
+      </div>
     ),
   },
   {
@@ -96,34 +106,95 @@ export function EntitiesTable() {
 
   const data = query.data || [];
 
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
+  const [columnVisibility, setColumnVisibility] = React.useState<
+    VisibilityState
+  >({});
+  const [rowSelection, setRowSelection] = React.useState({});
+
   const table = useReactTable({
     data,
     columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
   });
 
   return (
-    <div className="m-10">
-      <h2 className="text-xl pb-1">Entities Table:</h2>
+    <div className="m-10 min-w-180">
+      <div className="flex items-center gap-2 py-4">
+        {query.isLoading
+          ? (
+            <div className="bg-secondary-background w-1/2">
+              <Skeleton className="h-10 bg-overlay w-full" />
+            </div>
+          )
+          : (
+            <Input
+              placeholder="Filter Account..."
+              value={(table.getColumn("name")?.getFilterValue() as string) ??
+                ""}
+              onChange={(event) =>
+                table.getColumn("name")?.setFilterValue(event.target.value)}
+              className="max-w-sm"
+            />
+          )}
+        {query.isLoading
+          ? (
+            <div className="bg-secondary-background w-1/2">
+              <Skeleton className="h-10 bg-overlay w-full" />
+            </div>
+          )
+          : (
+            <Input
+              placeholder="Filter Entity..."
+              value={(table.getColumn("entity_type")
+                ?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn("entity_type")?.setFilterValue(
+                  event.target.value,
+                )}
+              className="max-w-sm"
+            />
+          )}
+      </div>
 
-      <Table className="max-w-3/5">
+      <Table className="min-w-4/5">
         <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder ? null : flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
+          {query.isLoading
+            ? <TableSkeleton columns={columns.length} rows={1} />
+            : (
+              table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder ? null : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))
+            )}
         </TableHeader>
-        <TableBody>
+        <TableBody className="scroll-auto">
           {query.isLoading
             ? <TableSkeleton columns={columns.length} rows={5} />
             : table.getRowModel().rows?.length
