@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/select.tsx";
 import { getEntityTypes } from "@/src/service.ts";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { Input } from "@/components/ui/input.tsx";
+import { useEntityStore } from "@/src/stores/createEntityStore.ts";
 
 export default function CreateEntity() {
   const query = useQuery({
@@ -28,20 +29,21 @@ export default function CreateEntity() {
   });
 
   const data: string[] = query.data || [];
-  const [selectedValue, setSelectedValue] = useState<string>("");
+  const selectedValue = useEntityStore((state) => state.selectedValue);
+  const setSelectedValue = useEntityStore((state) => state.setSelectedValue);
   return (
-    <Card className="w-full h-full max-w-sm my-5 mx-5">
+    <Card className="w-full h-full max-w-xl my-5 mx-5">
       <CardHeader>
         <CardTitle>Create Your Entity</CardTitle>
         <CardDescription>Chose Entity Type</CardDescription>
       </CardHeader>
       <CardContent>
         <form>
-          <div className="flex flex-col gap-6">
-            <div className="grid gap-2">
+          <div className="flex flex-row justify-between gap-6">
+            <div className="grid w-full gap-2">
               <Label htmlFor="email">Entity Type</Label>
               <Select value={selectedValue} onValueChange={setSelectedValue}>
-                <SelectTrigger className="w-2/3">
+                <SelectTrigger className="w-full">
                   <SelectValue
                     placeholder="Select Entity Type"
                     className="capitalize"
@@ -70,6 +72,10 @@ export default function CreateEntity() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid w-full gap-2">
+              <Label>Tags</Label>
+              <Input />
             </div>
           </div>
         </form>
