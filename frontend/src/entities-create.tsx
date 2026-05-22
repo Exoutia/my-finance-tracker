@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select.tsx";
 import { getEntityTypes } from "@/src/service.ts";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 export default function CreateEntity() {
   const query = useQuery({
@@ -27,8 +28,9 @@ export default function CreateEntity() {
   });
 
   const data: string[] = query.data || [];
+  const [selectedValue, setSelectedValue] = useState<string>("");
   return (
-    <Card className="w-full h-1/2 max-w-sm">
+    <Card className="w-full h-full max-w-sm my-5 mx-5">
       <CardHeader>
         <CardTitle>Create Your Entity</CardTitle>
         <CardDescription>Chose Entity Type</CardDescription>
@@ -38,17 +40,23 @@ export default function CreateEntity() {
           <div className="flex flex-col gap-6">
             <div className="grid gap-2">
               <Label htmlFor="email">Entity Type</Label>
-              <Select>
-                <SelectTrigger className="w-45">
-                  <SelectValue placeholder="Select a fruit" />
+              <Select value={selectedValue} onValueChange={setSelectedValue}>
+                <SelectTrigger className="w-2/3">
+                  <SelectValue
+                    placeholder="Select Entity Type"
+                    className="capitalize"
+                  >
+                    {selectedValue
+                      ? selectedValue.split("_").map((item) => {
+                        return item.at(0).toUpperCase() + item.slice(1);
+                      }).join(" ")
+                      : ""}
+                  </SelectValue>
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="item-aligned">
                   <SelectGroup>
                     <SelectLabel>Entities</SelectLabel>
                     {data?.map((item) => {
-                      // FIX 1: Add the return statement
-                      // FIX 2: Add a unique key attribute
-                      // FIX 3: Wrap item in curly braces {} to evaluate it
                       return (
                         <SelectItem
                           className="capitalize"
