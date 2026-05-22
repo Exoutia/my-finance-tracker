@@ -200,7 +200,11 @@ export function EntitiesTable() {
             : table.getRowModel().rows?.length
             ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  className="bg-secondary-background text-foreground data-[state=selected]:bg-main data-[state=selected]:text-main-foreground"
+                  data-state={row.getIsSelected() && "selected"}
+                  key={row.id}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
