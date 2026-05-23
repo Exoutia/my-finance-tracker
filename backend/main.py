@@ -91,6 +91,15 @@ def get_all_entities(session: SessionDep, offset: int = 0, limit: int = Query(de
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
+@app.get("/entities/all", response_model=list[schemas.EntityRegistryRead])
+def get_all_entities_without_limit(session: SessionDep):
+    try:
+        data = service.get_all_entities_without_limit(session)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
 @app.get("/entities/paginated", response_model=schemas.PaginatedResponse[schemas.EntityRegistryRead])
 def get_liquid_accounts_paginated(
     session: SessionDep,

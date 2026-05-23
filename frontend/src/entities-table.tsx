@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { type Entity, getPaginatedEntities } from "@/src/service.ts";
+import { type Entity, getAllEntitiesAtOnce } from "@/src/service.ts";
 import {
   type ColumnDef,
   type ColumnFiltersState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   type PaginationState,
   type SortingState,
@@ -119,13 +120,12 @@ export function EntitiesTable() {
 
   // 2. React Query Tracking Pagination State Updates
   const query = useQuery({
-    queryKey: ["entities", pagination],
-    queryFn: getPaginatedEntities,
+    queryKey: ["entities"],
+    queryFn: getAllEntitiesAtOnce,
   });
 
   // 3. Fallback safely to empty arrays and zero totals on initial load
-  const serverData = query.data?.items || [];
-  const totalRowCount = query.data?.total || 0;
+  const serverData = query.data || [];
 
   const table = useReactTable({
     data: serverData,
@@ -135,13 +135,10 @@ export function EntitiesTable() {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelection,
-
-    // 4. Server-Side Link Parameters
-    manualPagination: true,
-    rowCount: totalRowCount,
 
     state: {
       sorting,
@@ -256,9 +253,8 @@ export function EntitiesTable() {
 
         <div className="text-foreground flex flex-col sm:flex-row items-center justify-around gap-4 py-4 px-2 border-border">
           <div className="text-foreground flex-1 text-sm">
-            {table.getFilteredSelectedRowModel().rows.length} of {totalRowCount}
-            {" "}
-            row(s) selected.
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
           </div>
 
           {/* Right Side: Pagination Controls */}
@@ -297,7 +293,7 @@ export function EntitiesTable() {
                   className="h-8 w-14 text-center p-1 border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <span className="text-sm text-foreground">
-                  of {table.getPageCount() || 1}
+                  / {table.getPageCount() || 1}
                 </span>
               </div>
 

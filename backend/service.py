@@ -75,6 +75,14 @@ def get_all_entities(offset: int, limit: int, db: Session):
         raise DBException(e) from e
 
 
+def get_all_entities_without_limit(db: Session):
+    try:
+        data = db.exec(select(EntityRegistry).order_by(EntityRegistry.id)).all()
+        return data
+    except Exception as e:
+        raise DBException(e) from e
+
+
 def get_all_entities_paginated(db: Session, offset: int, limit: int):
     # 1. Total count query (ignores limit/offset completely)
     count_statement = select(func.count(EntityRegistry.id))

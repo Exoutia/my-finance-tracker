@@ -51,13 +51,21 @@ export async function getEntities(): Promise<Entity[] | null> {
     const data = await apiRequest<Entity[]>("/entities");
     return data;
   } catch (error) {
-    // You could trigger a toast notification here
     console.error(error);
     return null;
   }
 }
 
-// Update this function to dynamically build the URL parameters
+export async function getAllEntitiesAtOnce(): Promise<Entity[] | null> {
+  try {
+    const data = await apiRequest<Entity[]>("/entities/all");
+    return data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
 export async function getPaginatedEntities(
   { queryKey }: QueryFunctionContext<PaginatedInputQueryKey>,
 ) {
