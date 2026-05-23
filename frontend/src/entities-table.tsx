@@ -1,15 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { type Entity, getEntities } from "@/src/service.ts";
+import { type Entity, getPaginatedEntities } from "@/src/service.ts";
 import {
   type ColumnDef,
   type ColumnFiltersState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
+  type PaginationState,
   type SortingState,
   useReactTable,
+  type VisibilityState,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -26,6 +27,7 @@ import { TableSkeleton } from "@/components/sekletons/skeleton-table.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { Button } from "@/components/ui/Button.tsx";
 
 const columns: ColumnDef<Entity>[] = [
   {
@@ -60,7 +62,7 @@ const columns: ColumnDef<Entity>[] = [
     header: "Entity Type",
     cell: ({ row }) => (
       <div className="capitalize">
-        {row.getValue("entity_type").split("_").join(" ")}
+        {(row.getValue("entity_type") as string || "").split("_").join(" ")}
       </div>
     ),
   },
@@ -98,14 +100,8 @@ const columns: ColumnDef<Entity>[] = [
     },
   },
 ];
+
 export function EntitiesTable() {
-  const query = useQuery({
-    queryKey: ["entities"],
-    queryFn: getEntities,
-  });
-
-  const data = query.data || [];
-
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
@@ -115,119 +111,237 @@ export function EntitiesTable() {
   >({});
   const [rowSelection, setRowSelection] = React.useState({});
 
+  // 1. Local Pagination State Definition
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 5,
+  });
+
+  // 2. React Query Tracking Pagination State Updates
+  const query = useQuery({
+    queryKey: ["entities", pagination],
+    queryFn: getPaginatedEntities,
+  });
+
+  // 3. Fallback safely to empty arrays and zero totals on initial load
+  const serverData = query.data?.items || [];
+  const totalRowCount = query.data?.total || 0;
+
   const table = useReactTable({
-    data,
+    data: serverData,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelection,
+
+    // 4. Server-Side Link Parameters
+    manualPagination: true,
+    rowCount: totalRowCount,
+
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
     },
   });
 
   return (
-    <div className="m-10 min-w-180">
-      <div className="flex items-center gap-2 py-4">
-        {query.isLoading
-          ? (
-            <div className="bg-secondary-background w-1/2">
-              <Skeleton className="h-10 bg-overlay w-full" />
-            </div>
-          )
-          : (
-            <Input
-              placeholder="Filter Account..."
-              value={(table.getColumn("name")?.getFilterValue() as string) ??
-                ""}
-              onChange={(event) =>
-                table.getColumn("name")?.setFilterValue(event.target.value)}
-              className="max-w-sm"
-            />
-          )}
-        {query.isLoading
-          ? (
-            <div className="bg-secondary-background w-1/2">
-              <Skeleton className="h-10 bg-overlay w-full" />
-            </div>
-          )
-          : (
-            <Input
-              placeholder="Filter Entity..."
-              value={(table.getColumn("entity_type")
-                ?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn("entity_type")?.setFilterValue(
-                  event.target.value,
-                )}
-              className="max-w-sm"
-            />
-          )}
-      </div>
-
-      <Table className="min-w-4/5">
-        <TableHeader>
+    <>
+      <div className="my-5 mx-5 min-w-180">
+        <div className="flex items-center gap-2 pb-4">
           {query.isLoading
-            ? <TableSkeleton columns={columns.length} rows={1} />
-            : (
-              table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder ? null : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))
-            )}
-        </TableHeader>
-        <TableBody className="scroll-auto">
-          {query.isLoading
-            ? <TableSkeleton columns={columns.length} rows={5} />
-            : table.getRowModel().rows?.length
             ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  className="bg-secondary-background text-foreground data-[state=selected]:bg-main data-[state=selected]:text-main-foreground"
-                  data-state={row.getIsSelected() && "selected"}
-                  key={row.id}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              <div className="bg-secondary-background w-1/2">
+                <Skeleton className="h-10 bg-overlay w-full" />
+              </div>
             )
             : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
+              <Input
+                placeholder="Filter Account..."
+                value={(table.getColumn("name")?.getFilterValue() as string) ??
+                  ""}
+                onChange={(event) =>
+                  table.getColumn("name")?.setFilterValue(event.target.value)}
+                className="max-w-sm"
+              />
             )}
-        </TableBody>
-      </Table>
-    </div>
+          {query.isLoading
+            ? (
+              <div className="bg-secondary-background w-1/2">
+                <Skeleton className="h-10 bg-overlay w-full" />
+              </div>
+            )
+            : (
+              <Input
+                placeholder="Filter Entity..."
+                value={(table.getColumn("entity_type")
+                  ?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  table.getColumn("entity_type")?.setFilterValue(
+                    event.target.value,
+                  )}
+                className="max-w-sm"
+              />
+            )}
+        </div>
+
+        <Table className="min-w-4/5">
+          <TableHeader>
+            {query.isLoading
+              ? <TableSkeleton columns={columns.length} rows={1} />
+              : (
+                table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder ? null : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))
+              )}
+          </TableHeader>
+          <TableBody className="scroll-auto">
+            {/* 5. Switched to isFetching so page transitions visually trigger layout skeletons */}
+            {query.isFetching
+              ? (
+                <TableSkeleton
+                  columns={columns.length}
+                  rows={pagination.pageSize}
+                />
+              )
+              : table.getRowModel().rows?.length
+              ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    className="bg-secondary-background text-foreground data-[state=selected]:bg-main data-[state=selected]:text-main-foreground"
+                    data-state={row.getIsSelected() && "selected"}
+                    key={row.id}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )
+              : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+          </TableBody>
+        </Table>
+
+        <div className="text-foreground flex flex-col sm:flex-row items-center justify-around gap-4 py-4 px-2 border-border">
+          <div className="text-foreground flex-1 text-sm">
+            {table.getFilteredSelectedRowModel().rows.length} of {totalRowCount}
+            {" "}
+            row(s) selected.
+          </div>
+
+          {/* Right Side: Pagination Controls */}
+          <div className="flex flex-wrap items-center justify-center gap-6 order-1 sm:order-2">
+            {/* Page Navigation Buttons */}
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="icon"
+                onClick={() => table.firstPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">Go to first page</span>
+                {"<<"}
+              </Button>
+              <Button
+                size="icon"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">Go to previous page</span>
+                {"<"}
+              </Button>
+
+              {/* Page Input Counter */}
+              <div className="flex items-center gap-2 mx-2">
+                <Input
+                  type="number"
+                  max={table.getPageCount()}
+                  value={table.getState().pagination.pageIndex + 1}
+                  onChange={(e) => {
+                    const page = e.target.value
+                      ? Number(e.target.value) - 1
+                      : 0;
+                    table.setPageIndex(page);
+                  }}
+                  className="h-8 w-14 text-center p-1 border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-sm text-foreground">
+                  of {table.getPageCount() || 1}
+                </span>
+              </div>
+
+              <Button
+                size="icon"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Go to next page</span>
+                {">"}
+              </Button>
+              <Button
+                size="icon"
+                onClick={() => table.lastPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Go to last page</span>
+                {">>"}
+              </Button>
+            </div>
+
+            {/* Vertical Divider */}
+            <div className="hidden md:block h-4 w-px bg-slate-200" />
+
+            {/* Page Size Selector */}
+            <div className="flex items-center gap-2">
+              <span>Rows per page</span>
+              <select
+                value={table.getState().pagination.pageSize}
+                onChange={(e) => {
+                  table.setPageSize(Number(e.target.value));
+                }}
+                className="h-8 rounded-md border border-border bg-secondary-background px-2 py-1 shadow-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 cursor-pointer"
+              >
+                {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+                  <option key={pageSize} value={pageSize}>
+                    {pageSize}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

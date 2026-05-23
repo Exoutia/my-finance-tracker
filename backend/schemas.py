@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum, auto, unique
-from typing import List, Literal, Optional, Type, Union
+from typing import Generic, List, Literal, Optional, Type, TypeVar, Union
 from uuid import UUID
 
 from models import EntityType, MutualFundType, TransactionType
@@ -136,6 +136,13 @@ TransactionCategory = Union[
     TransferCategory,
     ProvisionCategory,
 ]
+
+T = TypeVar("T")
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    total: int
+    items: list[T]
 
 
 class LiquidAccount(BaseModel):

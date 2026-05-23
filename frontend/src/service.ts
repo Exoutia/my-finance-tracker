@@ -1,3 +1,6 @@
+import type { PaginationState } from "@tanstack/react-table";
+import type { QueryFunctionContext } from "@tanstack/react-query";
+
 const BASE_URL = "/api";
 
 export interface Entity {
@@ -6,6 +9,13 @@ export interface Entity {
   uuid: string;
   tags: string[];
 }
+
+export interface PaginatedEntity {
+  total: number;
+  items: Entity[];
+}
+
+export type PaginatedInputQueryKey = [string, PaginationState];
 
 export async function apiRequest<T>(
   endpoint: string,
@@ -39,6 +49,29 @@ export async function apiRequest<T>(
 export async function getEntities(): Promise<Entity[] | null> {
   try {
     const data = await apiRequest<Entity[]>("/entities");
+    return data;
+  } catch (error) {
+    // You could trigger a toast notification here
+    console.error(error);
+    return null;
+  }
+}
+
+// Update this function to dynamically build the URL parameters
+export async function getPaginatedEntities(
+  { queryKey }: QueryFunctionContext<PaginatedInputQueryKey>,
+) {
+  try {
+    const [_key, paginationState] = queryKey;
+    const { pageIndex, pageSize } = paginationState;
+
+    const offset = pageIndex * pageSize;
+    const limit = pageSize;
+
+    const url = `/entities/paginated?offset=${offset}&limit=${limit}`;
+
+    const data = await apiRequest<PaginatedEntity>(url);
+
     return data;
   } catch (error) {
     // You could trigger a toast notification here

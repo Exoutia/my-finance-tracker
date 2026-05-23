@@ -91,6 +91,21 @@ def get_all_entities(session: SessionDep, offset: int = 0, limit: int = Query(de
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
+@app.get("/entities/paginated", response_model=schemas.PaginatedResponse[schemas.EntityRegistryRead])
+def get_liquid_accounts_paginated(
+    session: SessionDep,
+    offset: int = 0,
+    limit: int = Query(default=10, le=100),  # Lower default is better for standard UI pages
+):
+    try:
+        # Calls the dual-query service logic
+        total_count, items = service.get_all_entities_paginated(session, offset, limit)
+
+        return {"total": total_count, "items": items}
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
 @app.get("/entities/entity-types")
 def get_entity_type():
     try:

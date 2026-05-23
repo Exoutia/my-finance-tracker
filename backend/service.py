@@ -14,7 +14,7 @@ from models import (
     Transaction,
     VirtualEntity,
 )
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 
 class DBException(Exception):
@@ -73,6 +73,19 @@ def get_all_entities(offset: int, limit: int, db: Session):
         return data
     except Exception as e:
         raise DBException(e) from e
+
+
+def get_all_entities_paginated(db: Session, offset: int, limit: int):
+    # 1. Total count query (ignores limit/offset completely)
+    count_statement = select(func.count(EntityRegistry.id))
+    total_count = db.exec(count_statement).one()
+
+    # 2. Windowed data slice query
+    # Pro-tip: Adding an explicit order_by avoids records jumping pages!
+    data_statement = select(EntityRegistry).order_by("id").offset(offset).limit(limit)
+    items = db.exec(data_statement).all()
+
+    return total_count, items
 
 
 def get_entity_from_uuid(db: Session, item_uuid: UUID):
