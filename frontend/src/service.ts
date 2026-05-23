@@ -57,3 +57,32 @@ export async function getEntityTypes(): Promise<string[] | null> {
     return null;
   }
 }
+
+export interface LiquidAccountCreate {
+  name: string;
+  account_number: string;
+  minimum_balance: number;
+}
+export interface LiquidAccountRead {
+  name: string;
+  account_number: string;
+  minimum_balance: number;
+  id: number;
+  uuid: string;
+  entity_name: string;
+}
+
+export async function createLiquidAccount(
+  data: LiquidAccountCreate,
+): Promise<LiquidAccountRead | null> {
+  try {
+    const response = await apiRequest<LiquidAccountRead>("/liquid-accounts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return response;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
