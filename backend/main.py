@@ -159,7 +159,7 @@ def create_bond_entity(session: SessionDep, data: schemas.BondCreate):
         raise HTTPException(status_code=500, detail="Internal Data error") from err
 
 
-@app.get("/bonds", response_model=list[schemas.StockRead])
+@app.get("/bonds", response_model=list[schemas.BondRead])
 def get_all_bond_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
     try:
         data = service.get_all_bond_entity(session, offset, limit)
