@@ -21,7 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog.tsx";
-import CreateEntityForm from "@/src/create-entity-form.tsx";
+import CreateEntityForm from "@/src/create-entity-forms/create-entity-forms.tsx";
 import { useCreateEntityTypeStore } from "@/src/stores/createEntityStore.ts";
 
 export default function CreateEntity() {
@@ -68,7 +68,7 @@ export default function CreateEntity() {
                   <SelectContent position="item-aligned">
                     <SelectGroup>
                       <SelectLabel>Entities</SelectLabel>
-                      {data?.map((item) => {
+                      {data?.sort().map((item) => {
                         return (
                           <SelectItem
                             className="capitalize"

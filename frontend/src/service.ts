@@ -105,8 +105,6 @@ export interface LiquidAccountCreate {
   minimum_balance: number;
 }
 export interface LiquidAccountRead {
-  name: string;
-  account_number: string;
   minimum_balance: number;
   id: number;
   uuid: string;
@@ -118,6 +116,36 @@ export async function createLiquidAccount(
 ): Promise<LiquidAccountRead | null> {
   try {
     const response = await apiRequest<LiquidAccountRead>("/liquid-accounts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return response;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export interface CreditCardCreate {
+  name: string;
+  card_number: string;
+  limit: string;
+  statement_date: number;
+  grace_period: number;
+}
+
+export interface CreditCardRead {
+  display_name: string;
+  id: number;
+  uuid: string;
+  limit: string;
+}
+
+export async function createCreditCardEntity(
+  data: CreditCardCreate,
+): Promise<CreditCardRead | null> {
+  try {
+    const response = await apiRequest<CreditCardRead>("/credit-cards", {
       method: "POST",
       body: JSON.stringify(data),
     });

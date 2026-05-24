@@ -10,16 +10,11 @@ import {
 import { Label } from "@/components/ui/label.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { useCreateEntityTypeStore } from "@/src/stores/createEntityStore.ts";
-import { useCreateLiquidAccount } from "@/src/stores/useCreateLiquidAccount.ts";
+import { useCreateLiquidAccount } from "@/src/stores/createEntityHooks.ts";
 
-export default function CreateEntity() {
+export default function CreateLiquidAccountForm() {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { mutate, isPending, isError, error } = useCreateLiquidAccount();
-
-  const createEntityType = useCreateEntityTypeStore((state) =>
-    state.selectedValue
-  );
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,18 +33,6 @@ export default function CreateEntity() {
     });
   };
 
-  // Condition check happens first, render form inside DialogContent
-  if (createEntityType !== "liquid_account") {
-    return (
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create {createEntityType}</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4">Not Found</div>
-      </DialogContent>
-    );
-  }
-
   return (
     <DialogContent
       aria-describedby="create liquid account form"
@@ -59,26 +42,28 @@ export default function CreateEntity() {
         <DialogHeader>
           <DialogTitle>Create Liquid Account</DialogTitle>
           <DialogDescription>
-            Enter all the details
+            Enter the details for your new liquid account below.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4">
+          {/* Account Name */}
           <div className="grid gap-3">
-            <Label htmlFor="name-1">Name</Label>
+            <Label htmlFor="account-name">Name</Label>
             <Input
-              id="name-1"
+              id="account-name"
               name="name"
-              placeholder="Please Enter Name"
+              placeholder="e.g., High-Yield Savings"
               required
               disabled={isPending}
             />
           </div>
 
+          {/* Account Number */}
           <div className="grid gap-3">
-            <Label htmlFor="username-1">Account Number</Label>
+            <Label htmlFor="account-number">Account Number</Label>
             <Input
-              id="username-1"
+              id="account-number"
               name="account_number"
               placeholder="Please Enter A/C Number"
               required
@@ -86,13 +71,16 @@ export default function CreateEntity() {
             />
           </div>
 
+          {/* Minimum Balance */}
           <div className="grid gap-3">
-            <Label htmlFor="minimum-balance-1">Minimum Balance</Label>
+            <Label htmlFor="minimum-balance">Minimum Balance</Label>
             <Input
               type="number"
-              id="minimum-balance-1"
+              id="minimum-balance"
               name="minimum_balance"
               defaultValue="0"
+              min="0"
+              step="any"
               disabled={isPending}
             />
           </div>

@@ -3,7 +3,7 @@ import CreateEntity from "@/src/entities-create.tsx";
 
 export function Entities() {
   return (
-    <div className="flex">
+    <div className="flex justify-around">
       <EntitiesTable />
       <CreateEntity />
     </div>
