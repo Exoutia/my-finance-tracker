@@ -162,6 +162,7 @@ class LiquidAccountCreate(LiquidAccount):
 class LiquidAccountRead(LiquidAccount):
     id: int
     uuid: UUID
+    account_number: str = Field(exclude=True)
 
     @computed_field
     @property
@@ -198,6 +199,9 @@ class CreditCardBase(BaseModel):
     statement_date: int = Field(ge=1, le=31)
     grace_period: int = Field(default=20, ge=1)
 
+
+# --- Create Schema ---
+class CreditCardCreate(CreditCardBase):
     @field_validator("card_number")
     @classmethod
     def validate_card_number(cls, v: str) -> str:
@@ -207,25 +211,19 @@ class CreditCardBase(BaseModel):
         return v
 
 
-# --- Create Schema ---
-class CreditCardCreate(CreditCardBase):
-    pass
-
-
 class CreditCardRead(CreditCardBase):
     id: int
     uuid: UUID
-    created_at: datetime
-    updated_at: datetime
+    card_number: str = Field(exclude=True)
+
+    class Config:
+        from_attributes = True
 
     @computed_field
     @property
     def display_name(self) -> str:
         # Formats the name as "Name - 1234"
         return f"{self.name} - {self.card_number[-4:]}"
-
-    class Config:
-        from_attributes = True
 
 
 class MutualFundBase(BaseModel):

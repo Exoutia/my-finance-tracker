@@ -84,12 +84,9 @@ def get_all_entities_without_limit(db: Session):
 
 
 def get_all_entities_paginated(db: Session, offset: int, limit: int):
-    # 1. Total count query (ignores limit/offset completely)
     count_statement = select(func.count(EntityRegistry.id))
     total_count = db.exec(count_statement).one()
 
-    # 2. Windowed data slice query
-    # Pro-tip: Adding an explicit order_by avoids records jumping pages!
     data_statement = select(EntityRegistry).order_by("id").offset(offset).limit(limit)
     items = db.exec(data_statement).all()
 
