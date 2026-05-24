@@ -25,7 +25,27 @@ class ServiceException(Exception):
     pass
 
 
+class EntityValidationError(Exception):
+    """Custom exception raised when database-dependent business rules fail."""
+
+    pass
+
+
+def is_active_entity(db: Session, id: UUID) -> bool:
+    data = db.exec(select(EntityRegistry).where(EntityRegistry.active).where(EntityRegistry.uuid == id)).all()
+    return True if data else False
+
+
+def both_entities_are_active(db: Session, to_id: UUID, from_id: UUID) -> bool:
+    # Query your database tracking active properties on selected keys
+    to_active = is_active_entity(db, to_id)
+    from_active = is_active_entity(db, from_id)
+    return bool(to_active and from_active)
+
+
 def create_transaction(db: Session, transaction_data: schemas.TransactionCreate):
+    if not both_entities_are_active(db, transaction_data.to_entities_id, transaction_data.from_entities_id):
+        raise EntityValidationError("Transaction rejected: Both target entities must be valid and active.")
     try:
         new_transaction = Transaction.model_validate(transaction_data.model_dump())
         db.add(new_transaction)
@@ -39,7 +59,7 @@ def create_transaction(db: Session, transaction_data: schemas.TransactionCreate)
 
 def get_all_transactions(offset: int, limit: int, db: Session):
     try:
-        data = db.exec(select(Transaction).offset(offset).limit(limit)).all()
+        data = db.exec(select(Transaction).where(Transaction.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -69,7 +89,7 @@ def _create_entity(db: Session, entity_create_data: schemas.EntityRegistryCreate
 
 def get_all_entities(offset: int, limit: int, db: Session):
     try:
-        data = db.exec(select(EntityRegistry).offset(offset).limit(limit)).all()
+        data = db.exec(select(EntityRegistry).where(EntityRegistry.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -77,17 +97,17 @@ def get_all_entities(offset: int, limit: int, db: Session):
 
 def get_all_entities_without_limit(db: Session):
     try:
-        data = db.exec(select(EntityRegistry).order_by(EntityRegistry.id)).all()
+        data = db.exec(select(EntityRegistry).where(EntityRegistry.active).order_by("id")).all()
         return data
     except Exception as e:
         raise DBException(e) from e
 
 
 def get_all_entities_paginated(db: Session, offset: int, limit: int):
-    count_statement = select(func.count(EntityRegistry.id))
+    count_statement = select(func.count()).select_from(EntityRegistry).where(EntityRegistry.active)
     total_count = db.exec(count_statement).one()
 
-    data_statement = select(EntityRegistry).order_by("id").offset(offset).limit(limit)
+    data_statement = select(EntityRegistry).where(EntityRegistry.active).order_by("id").offset(offset).limit(limit)
     items = db.exec(data_statement).all()
 
     return total_count, items
@@ -182,7 +202,7 @@ def create_stock(db: Session, data: schemas.StockCreate):
 def create_bond(db: Session, data: schemas.BondCreate):
     entity_type = schemas.EntityType.BONDS
     registry_data = schemas.EntityRegistryCreate(
-        name=f"{data.name}-{data.isin[-4:]}",
+        name=f"{data.name}-{data.unique_id[-4:]}",
         entity_type=entity_type,
         table_name=schemas.ENTITY_TYPE_TO_TABLE[entity_type],
     )
@@ -190,7 +210,7 @@ def create_bond(db: Session, data: schemas.BondCreate):
 
     new_account = Bond(
         name=data.name,
-        isin=data.isin,
+        unique_id=data.unique_id,
         uuid=entity.uuid,
         face_value=data.face_value,
         maturity_date=data.maturity_date,
@@ -368,7 +388,7 @@ def create_virtual_entity(db: Session, data: schemas.VirtualEntityCreate):
 
 def get_all_virtual_entity(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(VirtualEntity).offset(offset).limit(limit)).all()
+        data = db.exec(select(VirtualEntity).where(VirtualEntity.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -376,7 +396,7 @@ def get_all_virtual_entity(db: Session, offset: int, limit: int):
 
 def get_all_external_contract(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(ExternalContact).offset(offset).limit(limit)).all()
+        data = db.exec(select(ExternalContact).where(ExternalContact.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -385,7 +405,11 @@ def get_all_external_contract(db: Session, offset: int, limit: int):
 def get_all_person_entity(db: Session, offset: int, limit: int):
     try:
         data = db.exec(
-            select(ExternalContact).where(not ExternalContact.is_institution).offset(offset).limit(limit)
+            select(ExternalContact)
+            .where(not ExternalContact.is_institution)
+            .where(ExternalContact.active)
+            .offset(offset)
+            .limit(limit)
         ).all()
         return data
     except Exception as e:
@@ -394,7 +418,13 @@ def get_all_person_entity(db: Session, offset: int, limit: int):
 
 def get_all_company_entity(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(ExternalContact).where(ExternalContact.is_institution).offset(offset).limit(limit)).all()
+        data = db.exec(
+            select(ExternalContact)
+            .where(ExternalContact.is_institution)
+            .where(ExternalContact.active)
+            .offset(offset)
+            .limit(limit)
+        ).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -402,7 +432,7 @@ def get_all_company_entity(db: Session, offset: int, limit: int):
 
 def get_all_credit_card_entity(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(CreditCard).offset(offset).limit(limit)).all()
+        data = db.exec(select(CreditCard).where(CreditCard.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -410,7 +440,7 @@ def get_all_credit_card_entity(db: Session, offset: int, limit: int):
 
 def get_all_mutual_fund_entity(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(MutualFund).offset(offset).limit(limit)).all()
+        data = db.exec(select(MutualFund).where(MutualFund.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -418,7 +448,7 @@ def get_all_mutual_fund_entity(db: Session, offset: int, limit: int):
 
 def get_all_demat_account_entity(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(DematAccount).offset(offset).limit(limit)).all()
+        data = db.exec(select(DematAccount).where(DematAccount.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -426,7 +456,7 @@ def get_all_demat_account_entity(db: Session, offset: int, limit: int):
 
 def get_all_fixed_deposit_entity(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(FixedDeposit).offset(offset).limit(limit)).all()
+        data = db.exec(select(FixedDeposit).where(FixedDeposit.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -434,7 +464,7 @@ def get_all_fixed_deposit_entity(db: Session, offset: int, limit: int):
 
 def get_all_bond_entity(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(Bond).offset(offset).limit(limit)).all()
+        data = db.exec(select(Bond).where(Bond.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -442,7 +472,7 @@ def get_all_bond_entity(db: Session, offset: int, limit: int):
 
 def get_all_stock_entity(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(Stock).offset(offset).limit(limit)).all()
+        data = db.exec(select(Stock).where(Stock.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e
@@ -450,7 +480,7 @@ def get_all_stock_entity(db: Session, offset: int, limit: int):
 
 def get_all_liquid_accounts(db: Session, offset: int, limit: int):
     try:
-        data = db.exec(select(LiquidAccount).offset(offset).limit(limit)).all()
+        data = db.exec(select(LiquidAccount).where(LiquidAccount.active).offset(offset).limit(limit)).all()
         return data
     except Exception as e:
         raise DBException(e) from e

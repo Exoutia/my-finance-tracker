@@ -51,6 +51,7 @@ class TimeStampMixin(SQLModel):
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc), nullable=False, sa_column_kwargs={"onupdate": func.now()}
     )
+    active: bool = Field(default=True)
 
 
 class LiquidAccount(TimeStampMixin, SQLModel, table=True):
@@ -106,7 +107,7 @@ class Bond(TimeStampMixin, SQLModel, table=True):
     __tablename__ = "bonds"
     id: int | None = Field(default=None, primary_key=True)
     uuid: UUID = Field(foreign_key="entity_registry.uuid")
-    isin: str
+    unique_id: str
     name: str
     coupon_interest_rate: Decimal
     face_value: Decimal

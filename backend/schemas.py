@@ -281,7 +281,7 @@ class FixedDepositRead(FixedDepositBase):
 
 
 class BondBase(BaseModel):
-    isin: str = Field(..., min_length=12, max_length=12, description="International Securities Identification Number")
+    unique_id: str = Field(..., description="International Securities Identification Number")
     name: str
     coupon_interest_rate: Decimal = Field(ge=0, description="Coupon rate as a decimal (e.g., 0.05 for 5%)")
     face_value: Decimal = Field(gt=0, description="The face value of the bond")
@@ -308,7 +308,7 @@ class BondRead(BondBase):
     @computed_field
     @property
     def display_name(self) -> str:
-        return f"{self.name}-{self.isin[-4:]}"
+        return f"{self.name}-{self.unique_id[-4:]}"
 
     class Config:
         from_attributes = True

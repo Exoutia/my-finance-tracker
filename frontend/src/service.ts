@@ -104,6 +104,7 @@ export interface LiquidAccountCreate {
   account_number: string;
   minimum_balance: number;
 }
+
 export interface LiquidAccountRead {
   minimum_balance: number;
   id: number;

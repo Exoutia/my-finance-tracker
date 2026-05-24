@@ -100,6 +100,15 @@ def get_all_entities_without_limit(session: SessionDep):
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
+@app.get("/entities/validate")
+def is_valid_entity(session: SessionDep, id: UUID):
+    try:
+        data = service.is_active_entity(session, id)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
 @app.get("/entities/paginated", response_model=schemas.PaginatedResponse[schemas.EntityRegistryRead])
 def get_liquid_accounts_paginated(
     session: SessionDep,
