@@ -18,7 +18,7 @@ interface CreateExternalContactProps {
   isInstitution: boolean;
 }
 
-export default function CreateExternalContact(
+export default function CreateExternalContract(
   { isInstitution }: CreateExternalContactProps,
 ) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
