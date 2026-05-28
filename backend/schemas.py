@@ -184,9 +184,9 @@ class DematAccountCreate(DematAccountBase):
 
 class DematAccountRead(DematAccountBase):
     id: int
+    account_number: str = Field(exclude=True)
+    dp_id: str = Field(exclude=True)
     uuid: UUID
-    created_at: datetime
-    updated_at: datetime
 
     class Config:
         from_attributes = True
