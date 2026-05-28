@@ -188,3 +188,34 @@ export async function createBondEntity(
   });
   return response;
 }
+
+export interface ExternalContactCreate {
+  name: string;
+  tags?: string | null;
+  is_institution: boolean;
+  mobile_number?: string | null;
+  description?: string | null;
+}
+
+export interface ExternalContractRead {
+  name: string;
+  tags?: string | null;
+  is_institution: boolean;
+  mobile_number?: string | null;
+  id: number;
+  uuid: string;
+  display_name: string;
+}
+
+export async function createExternalContractEntity(
+  data: ExternalContactCreate,
+): Promise<ExternalContractRead | null> {
+  const response = await apiRequest<ExternalContractRead>(
+    "/external-contracts",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+  return response;
+}

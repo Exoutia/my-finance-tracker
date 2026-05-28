@@ -3,8 +3,10 @@ import {
   type BondCreate,
   createBondEntity,
   createCreditCardEntity,
+  createExternalContractEntity,
   createLiquidAccount,
   type CreditCardCreate,
+  type ExternalContactCreate,
   type LiquidAccountCreate,
 } from "@/src/service.ts";
 
@@ -60,6 +62,31 @@ export function useBondEntity() {
       const result = await createBondEntity(data);
       if (result === null) {
         throw new Error("Failed to create bond");
+      }
+      return result;
+    },
+    onSuccess: (newAccount) => {
+      console.log("Successfully created:", newAccount);
+
+      queryClient.invalidateQueries({ queryKey: ["entities"] });
+    },
+    onError: (error) => {
+      console.error("Mutation failed:", error.message);
+    },
+  });
+}
+
+export function useCreateExternalContractEntity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: ExternalContactCreate) => {
+      const result = await createExternalContractEntity(data);
+      if (result === null) {
+        throw new Error(
+          "Failed to create " +
+            (data.is_institution ? "Company enntity" : "Person entity"),
+        );
       }
       return result;
     },
