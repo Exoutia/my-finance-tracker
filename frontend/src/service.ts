@@ -3,6 +3,19 @@ import type { QueryFunctionContext } from "@tanstack/react-query";
 
 const BASE_URL = "/api";
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+
+    // Fixes the prototype chain for built-in classes in ES5/TS
+    Object.setPrototypeOf(this, ApiError.prototype);
+  }
+}
+
 export interface Entity {
   name: string;
   entity_type: string;
@@ -37,10 +50,14 @@ export async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    const error = await response
+    const errorBody = await response
       .json()
       .catch(() => ({ detail: "Unknown error" }));
-    throw new Error(error.detail || "API request failed");
+
+    throw new ApiError(
+      errorBody.detail || "API request failed",
+      response.status,
+    );
   }
 
   return response.json() as Promise<T>;
@@ -115,16 +132,11 @@ export interface LiquidAccountRead {
 export async function createLiquidAccount(
   data: LiquidAccountCreate,
 ): Promise<LiquidAccountRead | null> {
-  try {
-    const response = await apiRequest<LiquidAccountRead>("/liquid-accounts", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-    return response;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
+  const response = await apiRequest<LiquidAccountRead>("/liquid-accounts", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return response;
 }
 
 export interface CreditCardCreate {
@@ -145,14 +157,34 @@ export interface CreditCardRead {
 export async function createCreditCardEntity(
   data: CreditCardCreate,
 ): Promise<CreditCardRead | null> {
-  try {
-    const response = await apiRequest<CreditCardRead>("/credit-cards", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-    return response;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
+  const response = await apiRequest<CreditCardRead>("/credit-cards", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return response;
+}
+
+export interface BondCreate {
+  unique_id: string;
+  name: string;
+  coupon_interest_rate: string;
+  face_value: string;
+  maturity_date: Date;
+}
+
+export interface BondRead {
+  name: string;
+  coupon_interest_rate: string;
+  face_value: string;
+  maturity_date: Date;
+}
+
+export async function createBondEntity(
+  data: BondCreate,
+): Promise<BondRead | null> {
+  const response = await apiRequest<BondRead>("/bonds", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return response;
 }

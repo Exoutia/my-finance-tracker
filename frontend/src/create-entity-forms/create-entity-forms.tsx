@@ -6,6 +6,7 @@ import {
 import { useCreateEntityTypeStore } from "@/src/stores/createEntityStore.ts";
 import CreateLiquidAccountForm from "@/src/create-entity-forms/create-liquid-account.tsx";
 import CreateCreditCardForm from "@/src/create-entity-forms/create-credit-card.tsx";
+import CreateBondEntity from "@/src/create-entity-forms/create-bond.tsx";
 
 export default function CreateEntityForms() {
   const createEntityType = useCreateEntityTypeStore((state) =>
@@ -19,6 +20,10 @@ export default function CreateEntityForms() {
 
   if (createEntityType === "credit_card") {
     return <CreateCreditCardForm />;
+  }
+
+  if (createEntityType === "bonds") {
+    return <CreateBondEntity />;
   }
 
   return (
