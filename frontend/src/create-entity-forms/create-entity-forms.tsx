@@ -9,6 +9,7 @@ import CreateCreditCardForm from "@/src/create-entity-forms/create-credit-card.t
 import CreateBondEntity from "@/src/create-entity-forms/create-bond.tsx";
 import CreateExternalContact from "@/src/create-entity-forms/create-external-contract.tsx";
 import CreateDematAccount from "@/src/create-entity-forms/create-demat-account.tsx";
+import CreateFixedDeposit from "@/src/create-entity-forms/create-fixed-deposit.tsx";
 
 export default function CreateEntityForms() {
   const createEntityType = useCreateEntityTypeStore((state) =>
@@ -37,6 +38,10 @@ export default function CreateEntityForms() {
 
   if (createEntityType === "demat_account") {
     return <CreateDematAccount />;
+  }
+
+  if (createEntityType === "fixed_deposit_account") {
+    return <CreateFixedDeposit />;
   }
   return (
     <DialogContent>

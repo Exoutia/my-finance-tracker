@@ -5,10 +5,12 @@ import {
   createCreditCardEntity,
   createDematAccount,
   createExternalContractEntity,
+  createFixedDeposit,
   createLiquidAccount,
   type CreditCardCreate,
   type DematAccountCreate,
   type ExternalContactCreate,
+  type FixedDepositCreate,
   type LiquidAccountCreate,
 } from "@/src/service.ts";
 
@@ -117,6 +119,27 @@ export function useCreateDematAccount() {
     },
     onSuccess: (newAccount) => {
       console.log("Successfully created demat account:", newAccount);
+      queryClient.invalidateQueries({ queryKey: ["entities"] });
+    },
+    onError: (error) => {
+      console.error("Mutation failed:", error.message);
+    },
+  });
+}
+
+export function useCreateFixedDeposit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: FixedDepositCreate) => {
+      const result = await createFixedDeposit(data);
+      if (result === null) {
+        throw new Error("Failed to create fixed deposit record");
+      }
+      return result;
+    },
+    onSuccess: (newFD) => {
+      console.log("Successfully created fixed deposit:", newFD);
       queryClient.invalidateQueries({ queryKey: ["entities"] });
     },
     onError: (error) => {

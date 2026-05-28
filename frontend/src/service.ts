@@ -247,3 +247,25 @@ export async function createDematAccount(
   );
   return response;
 }
+
+export interface FixedDepositCreate {
+  bank_name: string;
+  fd_identifier: string;
+  principal_amount: number;
+  interest_rate: number;
+  maturity_date: Date;
+}
+
+export interface FixedDepositRead extends FixedDepositCreate {
+  display_name: string;
+}
+
+export async function createFixedDeposit(
+  data: FixedDepositCreate,
+): Promise<FixedDepositRead | null> {
+  const response = await apiRequest<FixedDepositRead>("/fixed-depsoits", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return response;
+}
