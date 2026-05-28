@@ -14,6 +14,7 @@ from models import (
     Transaction,
     VirtualEntity,
 )
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, func, select
 
 
@@ -27,6 +28,12 @@ class ServiceException(Exception):
 
 class EntityValidationError(Exception):
     """Custom exception raised when database-dependent business rules fail."""
+
+    pass
+
+
+class EntityAlreadyExistsError(Exception):
+    """Custom exception raised when already entity is present in entity registry"""
 
     pass
 
@@ -83,6 +90,9 @@ def _create_entity(db: Session, entity_create_data: schemas.EntityRegistryCreate
         db.flush()
         db.refresh(new_entity)
         return new_entity
+    except IntegrityError as e:
+        db.rollback()
+        raise EntityAlreadyExistsError(f"A bond with unique ID '{entity_create_data.name}' already exists.") from e
     except Exception as e:
         raise DBException from e
 

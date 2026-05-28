@@ -48,6 +48,19 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+@app.exception_handler(service.EntityAlreadyExistsError)
+async def entity_already_exists_exception_handler(request: Request, exc: service.EntityAlreadyExistsError):
+    return JSONResponse(
+        status_code=409,
+        content={
+            "detail": str(exc)
+            if str(exc)
+            else "Entity already exists. Please choose a different name or unique identifier.",
+            "type": "EntityAlreadyExistsError",
+        },
+    )
+
+
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
