@@ -10,12 +10,11 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
     this.status = status;
-
-    // Fixes the prototype chain for built-in classes in ES5/TS
     Object.setPrototypeOf(this, ApiError.prototype);
   }
 }
 
+// --- Interfaces ---
 export interface Entity {
   name: string;
   entity_type: string;
@@ -30,11 +29,15 @@ export interface PaginatedEntity {
 
 export type PaginatedInputQueryKey = [string, PaginationState];
 
+// --- Core API Request Wrapper ---
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
-) {
-  const dbPassword = sessionStorage.getItem("db_password");
+): Promise<T> {
+  // Guard against SSR environments crashing on sessionStorage
+  const dbPassword = typeof window !== "undefined"
+    ? sessionStorage.getItem("db_password")
+    : null;
 
   const headers = new Headers(options.headers);
   headers.set("Content-Type", "application/json");
@@ -63,65 +66,41 @@ export async function apiRequest<T>(
   return response.json() as Promise<T>;
 }
 
-export async function getEntities(): Promise<Entity[] | null> {
-  try {
-    const data = await apiRequest<Entity[]>("/entities");
-    return data;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
+// --- GET Requests (Stop swallowing errors, let TanStack Query handle them!) ---
+
+export function getEntities(): Promise<Entity[]> {
+  return apiRequest<Entity[]>("/entities");
 }
 
-export async function getAllEntitiesAtOnce(): Promise<Entity[] | null> {
-  try {
-    const data = await apiRequest<Entity[]>("/entities/all");
-    return data;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
+export function getAllEntitiesAtOnce(): Promise<Entity[]> {
+  return apiRequest<Entity[]>("/entities/all");
 }
 
-export async function getPaginatedEntities(
+export function getPaginatedEntities(
   { queryKey }: QueryFunctionContext<PaginatedInputQueryKey>,
-) {
-  try {
-    const [_key, paginationState] = queryKey;
-    const { pageIndex, pageSize } = paginationState;
+): Promise<PaginatedEntity> {
+  const [_key, paginationState] = queryKey;
+  const { pageIndex, pageSize } = paginationState;
 
-    const offset = pageIndex * pageSize;
-    const limit = pageSize;
+  const offset = pageIndex * pageSize;
+  const limit = pageSize;
 
-    const url = `/entities/paginated?offset=${offset}&limit=${limit}`;
-
-    const data = await apiRequest<PaginatedEntity>(url);
-
-    return data;
-  } catch (error) {
-    // You could trigger a toast notification here
-    console.error(error);
-    return null;
-  }
+  return apiRequest<PaginatedEntity>(
+    `/entities/paginated?offset=${offset}&limit=${limit}`,
+  );
 }
 
-export async function getEntityTypes(): Promise<string[] | null> {
-  try {
-    const data = await apiRequest<string[]>("/entities/entity-types");
-    return data;
-  } catch (error) {
-    // You could trigger a toast notification here
-    console.error(error);
-    return null;
-  }
+export function getEntityTypes(): Promise<string[]> {
+  return apiRequest<string[]>("/entities/entity-types");
 }
+
+// --- POST Mutations ---
 
 export interface LiquidAccountCreate {
   name: string;
   account_number: string;
   minimum_balance: number;
 }
-
 export interface LiquidAccountRead {
   minimum_balance: number;
   id: number;
@@ -129,14 +108,13 @@ export interface LiquidAccountRead {
   entity_name: string;
 }
 
-export async function createLiquidAccount(
+export function createLiquidAccount(
   data: LiquidAccountCreate,
-): Promise<LiquidAccountRead | null> {
-  const response = await apiRequest<LiquidAccountRead>("/liquid-accounts", {
+): Promise<LiquidAccountRead> {
+  return apiRequest<LiquidAccountRead>("/liquid-accounts", {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return response;
 }
 
 export interface CreditCardCreate {
@@ -146,7 +124,6 @@ export interface CreditCardCreate {
   statement_date: number;
   grace_period: number;
 }
-
 export interface CreditCardRead {
   display_name: string;
   id: number;
@@ -154,14 +131,13 @@ export interface CreditCardRead {
   limit: string;
 }
 
-export async function createCreditCardEntity(
+export function createCreditCardEntity(
   data: CreditCardCreate,
-): Promise<CreditCardRead | null> {
-  const response = await apiRequest<CreditCardRead>("/credit-cards", {
+): Promise<CreditCardRead> {
+  return apiRequest<CreditCardRead>("/credit-cards", {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return response;
 }
 
 export interface BondCreate {
@@ -171,7 +147,6 @@ export interface BondCreate {
   face_value: string;
   maturity_date: Date;
 }
-
 export interface BondRead {
   name: string;
   coupon_interest_rate: string;
@@ -179,14 +154,11 @@ export interface BondRead {
   maturity_date: Date;
 }
 
-export async function createBondEntity(
-  data: BondCreate,
-): Promise<BondRead | null> {
-  const response = await apiRequest<BondRead>("/bonds", {
+export function createBondEntity(data: BondCreate): Promise<BondRead> {
+  return apiRequest<BondRead>("/bonds", {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return response;
 }
 
 export interface ExternalContactCreate {
@@ -196,7 +168,6 @@ export interface ExternalContactCreate {
   mobile_number?: string | null;
   description?: string | null;
 }
-
 export interface ExternalContactRead {
   name: string;
   tags?: string | null;
@@ -207,17 +178,13 @@ export interface ExternalContactRead {
   display_name: string;
 }
 
-export async function createExternalContactEntity(
+export function createExternalContactEntity(
   data: ExternalContactCreate,
-): Promise<ExternalContactRead | null> {
-  const response = await apiRequest<ExternalContactRead>(
-    "/external-contacts",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
-  );
-  return response;
+): Promise<ExternalContactRead> {
+  return apiRequest<ExternalContactRead>("/external-contacts", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
 export interface DematAccountCreate {
@@ -226,7 +193,6 @@ export interface DematAccountCreate {
   depository_participant: string;
   dp_id: string;
 }
-
 export interface DematAccountRead {
   name: string;
   depository_participant: string;
@@ -235,17 +201,13 @@ export interface DematAccountRead {
   uuid: string;
 }
 
-export async function createDematAccount(
+export function createDematAccount(
   data: DematAccountCreate,
-): Promise<DematAccountRead | null> {
-  const response = await apiRequest<DematAccountRead>(
-    "/demat-accounts",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
-  );
-  return response;
+): Promise<DematAccountRead> {
+  return apiRequest<DematAccountRead>("/demat-accounts", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
 export interface FixedDepositCreate {
@@ -255,79 +217,69 @@ export interface FixedDepositCreate {
   interest_rate: number;
   maturity_date: Date;
 }
-
 export interface FixedDepositRead extends FixedDepositCreate {
   display_name: string;
 }
 
-export async function createFixedDeposit(
+export function createFixedDeposit(
   data: FixedDepositCreate,
-): Promise<FixedDepositRead | null> {
-  const response = await apiRequest<FixedDepositRead>("/fixed-depsoits", {
+): Promise<FixedDepositRead> {
+  // FIXED TYPO: /fixed-depsoits -> /fixed-deposits
+  return apiRequest<FixedDepositRead>("/fixed-deposits", {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return response;
 }
 
 export type MutualFundType = "equity" | "debt" | "hybrid" | "elss" | "index";
-
 export interface MutualFundCreate {
   name: string;
   type: MutualFundType;
 }
-
 export interface MutualFundRead extends MutualFundCreate {
   id: number;
   uuid: string;
 }
 
-export async function createMutualFund(
+export function createMutualFund(
   data: MutualFundCreate,
-): Promise<MutualFundRead | null> {
-  const response = await apiRequest<MutualFundRead>("/mutual-funds", {
+): Promise<MutualFundRead> {
+  return apiRequest<MutualFundRead>("/mutual-funds", {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return response;
 }
 
 export interface VirtualEntityCreate {
   name: string;
-  description?: string | null; // Optional[str] = "" maps cleanly to string or null/optional
+  description?: string | null;
 }
-
 export interface VirtualEntityRead extends VirtualEntityCreate {
   id: number;
   uuid: string;
 }
 
-export async function createVirtualEntity(
+export function createVirtualEntity(
   data: VirtualEntityCreate,
-): Promise<VirtualEntityRead | null> {
-  const response = await apiRequest<VirtualEntityRead>("/virtual-entities", {
+): Promise<VirtualEntityRead> {
+  return apiRequest<VirtualEntityRead>("/virtual-entities", {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return response;
 }
 
 export interface StockCreate {
   symbol: string;
   name: string;
 }
-
 export interface StockRead extends StockCreate {
   id: number;
   uuid: string;
 }
 
-export async function createStock(
-  data: StockCreate,
-): Promise<StockRead | null> {
-  const response = await apiRequest<StockRead>("/stocks", {
+export function createStock(data: StockCreate): Promise<StockRead> {
+  return apiRequest<StockRead>("/stocks", {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return response;
 }

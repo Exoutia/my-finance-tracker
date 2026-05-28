@@ -199,7 +199,7 @@ def get_all_bond_entity(session: SessionDep, offset: int = 0, limit: int = Query
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
-@app.post("/fixed-depsoits", response_model=schemas.FixedDepositRead)
+@app.post("/fixed-deposits", response_model=schemas.FixedDepositRead)
 def create_fixed_deposit(session: SessionDep, data: schemas.FixedDepositCreate):
     try:
         data = service.create_fixed_deposit(session, data)
@@ -208,7 +208,7 @@ def create_fixed_deposit(session: SessionDep, data: schemas.FixedDepositCreate):
         raise HTTPException(status_code=500, detail="Internal Data error") from err
 
 
-@app.get("/fixed-depsoits", response_model=list[schemas.FixedDepositRead])
+@app.get("/fixed-deposits", response_model=list[schemas.FixedDepositRead])
 def get_all_fixed_deposit_entity(session: SessionDep, offset: int = 0, limit: int = Query(default=100, le=100)):
     try:
         data = service.get_all_fixed_deposit_entity(session, offset, limit)
