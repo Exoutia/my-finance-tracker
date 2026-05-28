@@ -10,12 +10,12 @@ import {
 import { Label } from "@/components/ui/label.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { useCreateBondEntity } from "@/src/stores/createEntityHooks.ts";
+import { useCreateBond } from "@/src/stores/createEntityHooks.ts";
 import type { BondCreate } from "@/src/service.ts";
 
 export default function CreateBondEntity() {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const { mutate, isPending, isError, error } = useCreateBondEntity();
+  const { mutate, isPending, isError, error } = useCreateBond();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

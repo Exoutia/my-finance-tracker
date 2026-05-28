@@ -10,12 +10,12 @@ import {
 import { Label } from "@/components/ui/label.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { useCreateCreditCardEntity } from "@/src/stores/createEntityHooks.ts";
+import { useCreateCreditCard } from "@/src/stores/createEntityHooks.ts";
 import type { CreditCardCreate } from "@/src/service.ts";
 
 export default function CreateCreditCardForm() {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const { mutate, isPending, isError, error } = useCreateCreditCardEntity();
+  const { mutate, isPending, isError, error } = useCreateCreditCard();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
