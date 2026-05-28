@@ -8,6 +8,7 @@ import CreateLiquidAccountForm from "@/src/create-entity-forms/create-liquid-acc
 import CreateCreditCardForm from "@/src/create-entity-forms/create-credit-card.tsx";
 import CreateBondEntity from "@/src/create-entity-forms/create-bond.tsx";
 import CreateExternalContact from "@/src/create-entity-forms/create-external-contract.tsx";
+import CreateDematAccount from "@/src/create-entity-forms/create-demat-account.tsx";
 
 export default function CreateEntityForms() {
   const createEntityType = useCreateEntityTypeStore((state) =>
@@ -34,6 +35,9 @@ export default function CreateEntityForms() {
     return <CreateExternalContact isInstitution={false} />;
   }
 
+  if (createEntityType === "demat_account") {
+    return <CreateDematAccount />;
+  }
   return (
     <DialogContent>
       <DialogHeader>

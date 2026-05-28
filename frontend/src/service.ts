@@ -219,3 +219,31 @@ export async function createExternalContractEntity(
   );
   return response;
 }
+
+export interface DematAccountCreate {
+  name: string;
+  account_number: string;
+  depository_participant: string;
+  dp_id: string;
+}
+
+export interface DematAccountRead {
+  name: string;
+  depository_participant: string;
+  dp_id: string;
+  id: number;
+  uuid: string;
+}
+
+export async function createDematAccount(
+  data: DematAccountCreate,
+): Promise<DematAccountRead | null> {
+  const response = await apiRequest<DematAccountRead>(
+    "/demat-accounts",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+  return response;
+}

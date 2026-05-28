@@ -3,9 +3,11 @@ import {
   type BondCreate,
   createBondEntity,
   createCreditCardEntity,
+  createDematAccount,
   createExternalContractEntity,
   createLiquidAccount,
   type CreditCardCreate,
+  type DematAccountCreate,
   type ExternalContactCreate,
   type LiquidAccountCreate,
 } from "@/src/service.ts";
@@ -93,6 +95,28 @@ export function useCreateExternalContractEntity() {
     onSuccess: (newAccount) => {
       console.log("Successfully created:", newAccount);
 
+      queryClient.invalidateQueries({ queryKey: ["entities"] });
+    },
+    onError: (error) => {
+      console.error("Mutation failed:", error.message);
+    },
+  });
+}
+
+export function useCreateDematAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: DematAccountCreate) => {
+      // Swapped name to match the cleaner "createDematAccount" convention
+      const result = await createDematAccount(data);
+      if (result === null) {
+        throw new Error("Failed to create demat account");
+      }
+      return result;
+    },
+    onSuccess: (newAccount) => {
+      console.log("Successfully created demat account:", newAccount);
       queryClient.invalidateQueries({ queryKey: ["entities"] });
     },
     onError: (error) => {
