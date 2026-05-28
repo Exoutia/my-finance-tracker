@@ -197,7 +197,7 @@ export interface ExternalContactCreate {
   description?: string | null;
 }
 
-export interface ExternalContractRead {
+export interface ExternalContactRead {
   name: string;
   tags?: string | null;
   is_institution: boolean;
@@ -207,11 +207,11 @@ export interface ExternalContractRead {
   display_name: string;
 }
 
-export async function createExternalContractEntity(
+export async function createExternalContactEntity(
   data: ExternalContactCreate,
-): Promise<ExternalContractRead | null> {
-  const response = await apiRequest<ExternalContractRead>(
-    "/external-contracts",
+): Promise<ExternalContactRead | null> {
+  const response = await apiRequest<ExternalContactRead>(
+    "/external-contacts",
     {
       method: "POST",
       body: JSON.stringify(data),

@@ -4,7 +4,7 @@ import {
   createBondEntity,
   createCreditCardEntity,
   createDematAccount,
-  createExternalContractEntity,
+  createExternalContactEntity,
   createFixedDeposit,
   createLiquidAccount,
   createMutualFund,
@@ -20,199 +20,133 @@ import {
   type VirtualEntityCreate,
 } from "@/src/service.ts";
 
-export function useCreateLiquidAccount() {
+/**
+ * Reusable mutation side-effects handler to eliminate 50 lines of duplicate garbage.
+ */
+const useMutationOptions = (entityName: string) => {
   const queryClient = useQueryClient();
 
+  return {
+    onSuccess: (data: unknown) => {
+      console.log(`Successfully created ${entityName}:`, data);
+      queryClient.invalidateQueries({ queryKey: ["entities"] });
+    },
+    onError: (error: Error) => {
+      console.error(`Mutation failed for ${entityName}:`, error.message);
+    },
+  };
+};
+
+export function useCreateLiquidAccount() {
+  const options = useMutationOptions("liquid account");
   return useMutation({
     mutationFn: async (data: LiquidAccountCreate) => {
       const result = await createLiquidAccount(data);
-      if (result === null) {
-        throw new Error("Failed to create liquid account");
-      }
+      if (!result) throw new Error("Failed to create liquid account");
       return result;
     },
-    onSuccess: (newAccount) => {
-      console.log("Successfully created:", newAccount);
-
-      queryClient.invalidateQueries({ queryKey: ["entities"] });
-    },
-    onError: (error) => {
-      console.error("Mutation failed:", error.message);
-    },
+    ...options,
   });
 }
 
-export function useCreateCreditCardEntity() {
-  const queryClient = useQueryClient();
-
+export function useCreateCreditCard() {
+  const options = useMutationOptions("credit card");
   return useMutation({
     mutationFn: async (data: CreditCardCreate) => {
       const result = await createCreditCardEntity(data);
-      if (result === null) {
-        throw new Error("Failed to create credit card account");
-      }
+      if (!result) throw new Error("Failed to create credit card account");
       return result;
     },
-    onSuccess: (newAccount) => {
-      console.log("Successfully created:", newAccount);
-
-      queryClient.invalidateQueries({ queryKey: ["entities"] });
-    },
-    onError: (error) => {
-      console.error("Mutation failed:", error.message);
-    },
+    ...options,
   });
 }
 
-export function useCreateBondEntity() {
-  const queryClient = useQueryClient();
-
+export function useCreateBond() {
+  const options = useMutationOptions("bond");
   return useMutation({
     mutationFn: async (data: BondCreate) => {
       const result = await createBondEntity(data);
-      if (result === null) {
-        throw new Error("Failed to create bond");
-      }
+      if (!result) throw new Error("Failed to create bond");
       return result;
     },
-    onSuccess: (newAccount) => {
-      console.log("Successfully created:", newAccount);
-
-      queryClient.invalidateQueries({ queryKey: ["entities"] });
-    },
-    onError: (error) => {
-      console.error("Mutation failed:", error.message);
-    },
+    ...options,
   });
 }
 
-export function useCreateExternalContractEntity() {
-  const queryClient = useQueryClient();
-
+export function useCreateExternalContact() {
+  const options = useMutationOptions("external contact");
   return useMutation({
     mutationFn: async (data: ExternalContactCreate) => {
-      const result = await createExternalContractEntity(data);
-      if (result === null) {
+      const result = await createExternalContactEntity(data);
+      if (!result) {
         throw new Error(
-          "Failed to create " +
-            (data.is_institution ? "Company enntity" : "Person entity"),
+          `Failed to create ${
+            data.is_institution ? "Company entity" : "Person entity"
+          }`,
         );
       }
       return result;
     },
-    onSuccess: (newAccount) => {
-      console.log("Successfully created:", newAccount);
-
-      queryClient.invalidateQueries({ queryKey: ["entities"] });
-    },
-    onError: (error) => {
-      console.error("Mutation failed:", error.message);
-    },
+    ...options,
   });
 }
 
 export function useCreateDematAccount() {
-  const queryClient = useQueryClient();
-
+  const options = useMutationOptions("demat account");
   return useMutation({
     mutationFn: async (data: DematAccountCreate) => {
-      // Swapped name to match the cleaner "createDematAccount" convention
       const result = await createDematAccount(data);
-      if (result === null) {
-        throw new Error("Failed to create demat account");
-      }
+      if (!result) throw new Error("Failed to create demat account");
       return result;
     },
-    onSuccess: (newAccount) => {
-      console.log("Successfully created demat account:", newAccount);
-      queryClient.invalidateQueries({ queryKey: ["entities"] });
-    },
-    onError: (error) => {
-      console.error("Mutation failed:", error.message);
-    },
+    ...options,
   });
 }
 
 export function useCreateFixedDeposit() {
-  const queryClient = useQueryClient();
-
+  const options = useMutationOptions("fixed deposit");
   return useMutation({
     mutationFn: async (data: FixedDepositCreate) => {
       const result = await createFixedDeposit(data);
-      if (result === null) {
-        throw new Error("Failed to create fixed deposit record");
-      }
+      if (!result) throw new Error("Failed to create fixed deposit record");
       return result;
     },
-    onSuccess: (newFD) => {
-      console.log("Successfully created fixed deposit:", newFD);
-      queryClient.invalidateQueries({ queryKey: ["entities"] });
-    },
-    onError: (error) => {
-      console.error("Mutation failed:", error.message);
-    },
+    ...options,
   });
 }
 
 export function useCreateMutualFund() {
-  const queryClient = useQueryClient();
-
+  const options = useMutationOptions("mutual fund");
   return useMutation({
     mutationFn: async (data: MutualFundCreate) => {
       const result = await createMutualFund(data);
-      if (result === null) {
-        throw new Error("Failed to create mutual fund entity");
-      }
+      if (!result) throw new Error("Failed to create mutual fund entity");
       return result;
     },
-    onSuccess: (newFund) => {
-      console.log("Successfully created mutual fund:", newFund);
-      queryClient.invalidateQueries({ queryKey: ["entities"] });
-    },
-    onError: (error) => {
-      console.error("Mutation failed:", error.message);
-    },
+    ...options,
   });
 }
 
 export function useCreateVirtualEntity() {
-  const queryClient = useQueryClient();
-
+  const options = useMutationOptions("virtual entity");
   return useMutation({
     mutationFn: async (data: VirtualEntityCreate) => {
       const result = await createVirtualEntity(data);
-      if (result === null) {
-        throw new Error("Failed to create virtual entity");
-      }
+      if (!result) throw new Error("Failed to create virtual entity");
       return result;
     },
-    onSuccess: (newEntity) => {
-      console.log("Successfully created virtual entity:", newEntity);
-      queryClient.invalidateQueries({ queryKey: ["entities"] });
-    },
-    onError: (error) => {
-      console.error("Mutation failed:", error.message);
-    },
+    ...options,
   });
 }
 
 export function useCreateStock() {
-  const queryClient = useQueryClient();
-
+  const options = useMutationOptions("stock");
   return useMutation({
     mutationFn: async (data: StockCreate) => {
       const result = await createStock(data);
-      if (result === null) {
-        throw new Error("Failed to create stock asset");
-      }
+      if (!result) throw new Error("Failed to create stock asset");
       return result;
     },
-    onSuccess: (newStock) => {
-      console.log("Successfully created stock:", newStock);
-      queryClient.invalidateQueries({ queryKey: ["entities"] });
-    },
-    onError: (error) => {
-      console.error("Mutation failed:", error.message);
-    },
+    ...options,
   });
 }

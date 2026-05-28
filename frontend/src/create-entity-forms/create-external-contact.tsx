@@ -12,19 +12,18 @@ import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import type { ExternalContactCreate } from "@/src/service.ts";
-import { useCreateExternalContractEntity } from "@/src/stores/createEntityHooks.ts";
+import { useCreateExternalContact } from "@/src/stores/createEntityHooks.ts";
 
 interface CreateExternalContactProps {
   isInstitution: boolean;
 }
 
-export default function CreateExternalContract(
+export default function CreateExternalContact(
   { isInstitution }: CreateExternalContactProps,
 ) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { mutate, isPending, isError, error } =
-    useCreateExternalContractEntity();
+  const { mutate, isPending, isError, error } = useCreateExternalContact();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

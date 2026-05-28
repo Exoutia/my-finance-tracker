@@ -341,7 +341,7 @@ def create_credit_card_entity(db: Session, data: schemas.CreditCardCreate):
         raise DBException("Failed to create credit card entity") from e
 
 
-def create_external_contract(db: Session, data: schemas.ExternalContactCreate):
+def create_external_contact(db: Session, data: schemas.ExternalContactCreate):
     is_person = not data.is_institution
     if is_person:
         entity_type = schemas.EntityType.PERSON
@@ -371,7 +371,7 @@ def create_external_contract(db: Session, data: schemas.ExternalContactCreate):
         return new_account
     except Exception as e:
         db.rollback()
-        raise DBException("Failed to create external contract") from e
+        raise DBException("Failed to create external contact") from e
 
 
 def create_virtual_entity(db: Session, data: schemas.VirtualEntityCreate):
@@ -393,7 +393,7 @@ def create_virtual_entity(db: Session, data: schemas.VirtualEntityCreate):
         return new_account
     except Exception as e:
         db.rollback()
-        raise DBException("Failed to create external contract") from e
+        raise DBException("Failed to create external contact") from e
 
 
 def get_all_virtual_entity(db: Session, offset: int, limit: int):
@@ -404,7 +404,7 @@ def get_all_virtual_entity(db: Session, offset: int, limit: int):
         raise DBException(e) from e
 
 
-def get_all_external_contract(db: Session, offset: int, limit: int):
+def get_all_external_contact(db: Session, offset: int, limit: int):
     try:
         data = db.exec(select(ExternalContact).where(ExternalContact.active).offset(offset).limit(limit)).all()
         return data

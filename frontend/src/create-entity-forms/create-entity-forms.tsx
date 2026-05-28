@@ -7,7 +7,7 @@ import {
 import CreateLiquidAccountForm from "@/src/create-entity-forms/create-liquid-account.tsx";
 import CreateCreditCardForm from "@/src/create-entity-forms/create-credit-card.tsx";
 import CreateBondEntity from "@/src/create-entity-forms/create-bond.tsx";
-import CreateExternalContract from "@/src/create-entity-forms/create-external-contract.tsx";
+import CreateExternalContact from "@/src/create-entity-forms/create-external-contact.tsx";
 import CreateDematAccount from "@/src/create-entity-forms/create-demat-account.tsx";
 import CreateFixedDeposit from "@/src/create-entity-forms/create-fixed-deposit.tsx";
 import CreateMutualFund from "@/src/create-entity-forms/create-mutual-fund.tsx";
@@ -19,8 +19,8 @@ const FORM_MAP: Record<string, React.ReactElement> = {
   liquid_account: <CreateLiquidAccountForm />,
   credit_card: <CreateCreditCardForm />,
   bonds: <CreateBondEntity />,
-  company: <CreateExternalContract isInstitution />,
-  person: <CreateExternalContract isInstitution={false} />,
+  company: <CreateExternalContact isInstitution />,
+  person: <CreateExternalContact isInstitution={false} />,
   demat_account: <CreateDematAccount />,
   fixed_deposit_account: <CreateFixedDeposit />,
   mutual_fund: <CreateMutualFund />,
