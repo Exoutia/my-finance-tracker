@@ -291,3 +291,23 @@ export async function createMutualFund(
   });
   return response;
 }
+
+export interface VirtualEntityCreate {
+  name: string;
+  description?: string | null; // Optional[str] = "" maps cleanly to string or null/optional
+}
+
+export interface VirtualEntityRead extends VirtualEntityCreate {
+  id: number;
+  uuid: string;
+}
+
+export async function createVirtualEntity(
+  data: VirtualEntityCreate,
+): Promise<VirtualEntityRead | null> {
+  const response = await apiRequest<VirtualEntityRead>("/virtual-entities", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return response;
+}

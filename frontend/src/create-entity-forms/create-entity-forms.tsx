@@ -11,6 +11,7 @@ import CreateExternalContact from "@/src/create-entity-forms/create-external-con
 import CreateDematAccount from "@/src/create-entity-forms/create-demat-account.tsx";
 import CreateFixedDeposit from "@/src/create-entity-forms/create-fixed-deposit.tsx";
 import CreateMutualFund from "@/src/create-entity-forms/create-mutual-fund.tsx";
+import CreateVirtualEntity from "@/src/create-entity-forms/create-virtual-entity.tsx";
 
 export default function CreateEntityForms() {
   const createEntityType = useCreateEntityTypeStore((state) =>
@@ -47,6 +48,10 @@ export default function CreateEntityForms() {
 
   if (createEntityType === "mutual_fund") {
     return <CreateMutualFund />;
+  }
+
+  if (createEntityType === "virtual_entity") {
+    return <CreateVirtualEntity />;
   }
 
   return (

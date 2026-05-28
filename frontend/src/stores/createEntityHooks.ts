@@ -8,12 +8,14 @@ import {
   createFixedDeposit,
   createLiquidAccount,
   createMutualFund,
+  createVirtualEntity,
   type CreditCardCreate,
   type DematAccountCreate,
   type ExternalContactCreate,
   type FixedDepositCreate,
   type LiquidAccountCreate,
   type MutualFundCreate,
+  type VirtualEntityCreate,
 } from "@/src/service.ts";
 
 export function useCreateLiquidAccount() {
@@ -163,6 +165,27 @@ export function useCreateMutualFund() {
     },
     onSuccess: (newFund) => {
       console.log("Successfully created mutual fund:", newFund);
+      queryClient.invalidateQueries({ queryKey: ["entities"] });
+    },
+    onError: (error) => {
+      console.error("Mutation failed:", error.message);
+    },
+  });
+}
+
+export function useCreateVirtualEntity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: VirtualEntityCreate) => {
+      const result = await createVirtualEntity(data);
+      if (result === null) {
+        throw new Error("Failed to create virtual entity");
+      }
+      return result;
+    },
+    onSuccess: (newEntity) => {
+      console.log("Successfully created virtual entity:", newEntity);
       queryClient.invalidateQueries({ queryKey: ["entities"] });
     },
     onError: (error) => {
