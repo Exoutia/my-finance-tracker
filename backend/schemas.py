@@ -302,7 +302,7 @@ class BondRead(BondBase):
     Used when reading a Bond from the database.
     """
 
-    id: int
+    name: str = Field(exclude=True)
     uuid: UUID
 
     @computed_field
