@@ -7,11 +7,13 @@ import {
   createExternalContractEntity,
   createFixedDeposit,
   createLiquidAccount,
+  createMutualFund,
   type CreditCardCreate,
   type DematAccountCreate,
   type ExternalContactCreate,
   type FixedDepositCreate,
   type LiquidAccountCreate,
+  type MutualFundCreate,
 } from "@/src/service.ts";
 
 export function useCreateLiquidAccount() {
@@ -140,6 +142,27 @@ export function useCreateFixedDeposit() {
     },
     onSuccess: (newFD) => {
       console.log("Successfully created fixed deposit:", newFD);
+      queryClient.invalidateQueries({ queryKey: ["entities"] });
+    },
+    onError: (error) => {
+      console.error("Mutation failed:", error.message);
+    },
+  });
+}
+
+export function useCreateMutualFund() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: MutualFundCreate) => {
+      const result = await createMutualFund(data);
+      if (result === null) {
+        throw new Error("Failed to create mutual fund entity");
+      }
+      return result;
+    },
+    onSuccess: (newFund) => {
+      console.log("Successfully created mutual fund:", newFund);
       queryClient.invalidateQueries({ queryKey: ["entities"] });
     },
     onError: (error) => {

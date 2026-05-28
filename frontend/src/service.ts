@@ -269,3 +269,25 @@ export async function createFixedDeposit(
   });
   return response;
 }
+
+export type MutualFundType = "equity" | "debt" | "hybrid" | "elss" | "index";
+
+export interface MutualFundCreate {
+  name: string;
+  type: MutualFundType;
+}
+
+export interface MutualFundRead extends MutualFundCreate {
+  id: number;
+  uuid: string;
+}
+
+export async function createMutualFund(
+  data: MutualFundCreate,
+): Promise<MutualFundRead | null> {
+  const response = await apiRequest<MutualFundRead>("/mutual-funds", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return response;
+}
