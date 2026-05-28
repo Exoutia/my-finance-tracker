@@ -3,7 +3,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog.tsx";
-import { useCreateEntityTypeStore } from "@/src/stores/createEntityStore.ts";
 
 import CreateLiquidAccountForm from "@/src/create-entity-forms/create-liquid-account.tsx";
 import CreateCreditCardForm from "@/src/create-entity-forms/create-credit-card.tsx";
@@ -29,11 +28,12 @@ const FORM_MAP: Record<string, React.ReactElement> = {
   stocks: <CreateStock />,
 };
 
-export default function CreateEntityForms() {
-  const createEntityType = useCreateEntityTypeStore((state) =>
-    state.selectedValue
-  );
-
+interface CreateEntityFormProps {
+  createEntityType: string;
+}
+export default function CreateEntityForms(
+  { createEntityType }: CreateEntityFormProps,
+) {
   // 2. Instant lookup, O(1) time complexity, zero cognitive load to read
   if (createEntityType && createEntityType in FORM_MAP) {
     return FORM_MAP[createEntityType];

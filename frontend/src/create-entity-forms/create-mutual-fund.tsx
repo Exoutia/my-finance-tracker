@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   DialogClose,
   DialogContent,
@@ -12,6 +12,15 @@ import type { MutualFundCreate, MutualFundType } from "@/src/service.ts";
 import { Label } from "@/components/ui/label.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select.tsx";
 
 export default function CreateMutualFund() {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -23,6 +32,8 @@ export default function CreateMutualFund() {
     "elss",
     "index",
   ];
+
+  const [mutualFundType, setMutualFundType] = useState("");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -70,21 +81,33 @@ export default function CreateMutualFund() {
           {/* Fund Type Selection */}
           <div className="grid gap-3">
             <Label htmlFor="fund-type">Fund Type</Label>
-            <select
-              id="fund-type"
-              name="type"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            <Select
               required
-              defaultValue=""
-              disabled={isPending}
+              name="type"
+              value={mutualFundType}
+              onValueChange={setMutualFundType}
             >
-              <option value="" disabled>Select fund structure type</option>
-              {MUTUAL_FUND_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type.charAt(0) + type.slice(1).toLowerCase()}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                id="fund-type"
+                className="w-full"
+              >
+                <SelectValue placeholder="Select Entity Type">
+                  {mutualFundType.charAt(0).toUpperCase() +
+                    mutualFundType.slice(1).toLowerCase()}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent position="item-aligned">
+                <SelectGroup>
+                  <SelectLabel>Mutual Fund Type</SelectLabel>
+                  {MUTUAL_FUND_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type.charAt(0).toUpperCase() +
+                        type.slice(1).toLowerCase()}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
 
           {isError && (
