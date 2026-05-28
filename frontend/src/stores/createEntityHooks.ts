@@ -8,6 +8,7 @@ import {
   createFixedDeposit,
   createLiquidAccount,
   createMutualFund,
+  createStock,
   createVirtualEntity,
   type CreditCardCreate,
   type DematAccountCreate,
@@ -15,6 +16,7 @@ import {
   type FixedDepositCreate,
   type LiquidAccountCreate,
   type MutualFundCreate,
+  type StockCreate,
   type VirtualEntityCreate,
 } from "@/src/service.ts";
 
@@ -186,6 +188,27 @@ export function useCreateVirtualEntity() {
     },
     onSuccess: (newEntity) => {
       console.log("Successfully created virtual entity:", newEntity);
+      queryClient.invalidateQueries({ queryKey: ["entities"] });
+    },
+    onError: (error) => {
+      console.error("Mutation failed:", error.message);
+    },
+  });
+}
+
+export function useCreateStock() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: StockCreate) => {
+      const result = await createStock(data);
+      if (result === null) {
+        throw new Error("Failed to create stock asset");
+      }
+      return result;
+    },
+    onSuccess: (newStock) => {
+      console.log("Successfully created stock:", newStock);
       queryClient.invalidateQueries({ queryKey: ["entities"] });
     },
     onError: (error) => {

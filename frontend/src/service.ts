@@ -311,3 +311,23 @@ export async function createVirtualEntity(
   });
   return response;
 }
+
+export interface StockCreate {
+  symbol: string;
+  name: string;
+}
+
+export interface StockRead extends StockCreate {
+  id: number;
+  uuid: string;
+}
+
+export async function createStock(
+  data: StockCreate,
+): Promise<StockRead | null> {
+  const response = await apiRequest<StockRead>("/stocks", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return response;
+}

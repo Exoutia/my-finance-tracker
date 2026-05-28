@@ -12,6 +12,7 @@ import CreateDematAccount from "@/src/create-entity-forms/create-demat-account.t
 import CreateFixedDeposit from "@/src/create-entity-forms/create-fixed-deposit.tsx";
 import CreateMutualFund from "@/src/create-entity-forms/create-mutual-fund.tsx";
 import CreateVirtualEntity from "@/src/create-entity-forms/create-virtual-entity.tsx";
+import CreateStock from "@/src/create-entity-forms/create-stock.tsx";
 
 export default function CreateEntityForms() {
   const createEntityType = useCreateEntityTypeStore((state) =>
@@ -52,6 +53,10 @@ export default function CreateEntityForms() {
 
   if (createEntityType === "virtual_entity") {
     return <CreateVirtualEntity />;
+  }
+
+  if (createEntityType === "stocks") {
+    return <CreateStock />;
   }
 
   return (
