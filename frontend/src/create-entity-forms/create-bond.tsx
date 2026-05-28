@@ -10,19 +10,18 @@ import {
 import { Label } from "@/components/ui/label.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { useBondEntity } from "@/src/stores/createEntityHooks.ts";
+import { useCreateBondEntity } from "@/src/stores/createEntityHooks.ts";
 import type { BondCreate } from "@/src/service.ts";
 
 export default function CreateBondEntity() {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const { mutate, isPending, isError, error } = useBondEntity();
+  const { mutate, isPending, isError, error } = useCreateBondEntity();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
 
-    // Exact mapping matching your CreditCardCreate type definition
     const payload: BondCreate = {
       unique_id: formData.get("unique_id") as string,
       maturity_date: new Date(formData.get("maturity_date").toString()),

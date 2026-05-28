@@ -32,7 +32,7 @@ export function useCreateLiquidAccount() {
   });
 }
 
-export function useCreditCardEntity() {
+export function useCreateCreditCardEntity() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -54,7 +54,7 @@ export function useCreditCardEntity() {
   });
 }
 
-export function useBondEntity() {
+export function useCreateBondEntity() {
   const queryClient = useQueryClient();
 
   return useMutation({

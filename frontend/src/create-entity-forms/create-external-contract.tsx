@@ -23,7 +23,6 @@ export default function CreateExternalContact(
 ) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // 2. Swapped mock hook name (Replace with your actual TanStack Query hook, e.g., useCreateExternalContact)
   const { mutate, isPending, isError, error } =
     useCreateExternalContractEntity();
 
@@ -32,7 +31,6 @@ export default function CreateExternalContact(
 
     const formData = new FormData(e.currentTarget);
 
-    // 3. Extracted form values safely and matched ExternalContactCreate schema
     const payload: ExternalContactCreate = {
       name: formData.get("name") as string,
       tags: (formData.get("tags") as string) || null,

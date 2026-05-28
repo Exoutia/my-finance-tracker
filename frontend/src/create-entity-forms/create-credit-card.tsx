@@ -10,19 +10,18 @@ import {
 import { Label } from "@/components/ui/label.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { useCreditCardEntity } from "@/src/stores/createEntityHooks.ts";
+import { useCreateCreditCardEntity } from "@/src/stores/createEntityHooks.ts";
 import type { CreditCardCreate } from "@/src/service.ts";
 
 export default function CreateCreditCardForm() {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const { mutate, isPending, isError, error } = useCreditCardEntity();
+  const { mutate, isPending, isError, error } = useCreateCreditCardEntity();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
 
-    // Exact mapping matching your CreditCardCreate type definition
     const payload: CreditCardCreate = {
       name: formData.get("name") as string,
       card_number: formData.get("card_number") as string,

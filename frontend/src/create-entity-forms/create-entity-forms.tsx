@@ -14,7 +14,6 @@ export default function CreateEntityForms() {
     state.selectedValue
   );
 
-  // Condition check happens first, render form inside DialogContent
   if (createEntityType === "liquid_account") {
     return <CreateLiquidAccountForm />;
   }
