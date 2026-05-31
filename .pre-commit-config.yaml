@@ -36,6 +36,7 @@ repos:
         entry: deno fmt
         language: system
         files: ^frontend/.*\.(ts|tsx|js|jsx|json)$
+        exclude: ^frontend/src/routeTree\.gen\.ts$
         pass_filenames: true
 
       - id: deno-lint
@@ -43,4 +44,5 @@ repos:
         entry: deno lint
         language: system
         files: ^frontend/.*\.(ts|tsx|js|jsx)$
+        exclude: ^frontend/src/routeTree\.gen\.ts$
         pass_filenames: true

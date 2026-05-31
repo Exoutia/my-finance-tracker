@@ -2,6 +2,11 @@
   "imports": {
     "@/": "./"
   },
+  "fmt": {
+    "exclude": [
+      "src/routeTree.gen.ts"
+    ]
+  },
   "lint": {
     "include": ["src/", "components/", "lib/"],
     "exclude": [
