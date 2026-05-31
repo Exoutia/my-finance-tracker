@@ -8,13 +8,21 @@ export function Header() {
         <div className="flex gap-10 justify-between items-center">
           <div className="flex gap-2 justify-center items-center">
             <BadgeIndianRupee />
-            <h1 className="text-xl">My Finance Tracker</h1>
+            <Link to="/">
+              <h1 className="text-xl">My Finance Tracker</h1>
+            </Link>
           </div>
-          <div className="flex gap-5 justify-start itesm-center">
-            <Link to="/entities" className="[&.active]:font-bold">
+          <div className="flex items-center gap-4 font-bold">
+            <Link
+              to="/entities"
+              className="border-2 border-transparent px-3 py-1.5 transition-all hover:border-black hover:bg-main hover:text-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] [&.active]:border-black [&.active]:bg-main [&.active]:text-black [&.active]:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+            >
               Entities
             </Link>
-            <Link to="/about" className="[&.active]:font-bold">
+            <Link
+              to="/about"
+              className="border-2 border-transparent px-3 py-1.5 transition-all hover:border-black hover:bg-main hover:text-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] [&.active]:border-black [&.active]:bg-main [&.active]:text-black [&.active]:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+            >
               About
             </Link>
           </div>
