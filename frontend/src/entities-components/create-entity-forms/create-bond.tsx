@@ -21,10 +21,11 @@ export default function CreateBondEntity() {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
+    const maturityDateValue = formData.get("maturity_date")?.toString() ?? "";
 
     const payload: BondCreate = {
       unique_id: formData.get("unique_id") as string,
-      maturity_date: new Date(formData.get("maturity_date").toString()),
+      maturity_date: new Date(maturityDateValue),
       face_value: formData.get("face_value") as string,
       coupon_interest_rate: formData.get("coupon_interest_rate") as string,
       name: formData.get("name") as string,

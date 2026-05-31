@@ -79,6 +79,7 @@ export function getAllEntitiesAtOnce(): Promise<Entity[]> {
 export function getPaginatedEntities(
   { queryKey }: QueryFunctionContext<PaginatedInputQueryKey>,
 ): Promise<PaginatedEntity> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_key, paginationState] = queryKey;
   const { pageIndex, pageSize } = paginationState;
 

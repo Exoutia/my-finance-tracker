@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input.tsx";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog.tsx";
 
 import { getEntityTypes } from "@/src/service.ts";
-import CreateEntityForm from "@/src/create-entity-forms/create-entity-forms.tsx";
+import CreateEntityForms from "@/src/entities-components/create-entity-forms/create-entity-forms.tsx";
 
 // Helper function to handle string formatting cleanly outside the component layout
 const formatEntityLabel = (value: string): string => {
@@ -105,7 +105,7 @@ export default function CreateEntity() {
         </CardFooter>
       </Card>
 
-      <CreateEntityForm createEntityType={selectedEntityType} />
+      <CreateEntityForms createEntityType={selectedEntityType} />
     </Dialog>
   );
 }

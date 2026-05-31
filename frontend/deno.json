@@ -4,7 +4,11 @@
   },
   "lint": {
     "include": ["src/", "components/", "lib/"],
-    "exclude": ["src/testdata/", "src/fixtures/**/*.ts"],
+    "exclude": [
+      "src/testdata/",
+      "src/fixtures/**/*.ts",
+      "src/routeTree.gen.ts"
+    ],
     "rules": {
       "tags": ["recommended"],
       "include": ["ban-untagged-todo"]

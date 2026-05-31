@@ -127,6 +127,7 @@ export function EntitiesTable() {
   // 3. Fallback safely to empty arrays and zero totals on initial load
   const serverData = query.data || [];
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: serverData,
     columns,

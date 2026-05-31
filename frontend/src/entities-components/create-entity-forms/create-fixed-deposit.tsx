@@ -22,12 +22,14 @@ export default function CreateFixedDeposit() {
 
     const formData = new FormData(e.currentTarget);
 
+    const maturityDateValue = formData.get("maturity_date")?.toString() ?? "";
+
     const payload: FixedDepositCreate = {
       bank_name: formData.get("bank_name") as string,
       fd_identifier: formData.get("fd_identifier") as string,
       principal_amount: Number(formData.get("principal_amount")),
       interest_rate: Number(formData.get("interest_rate")),
-      maturity_date: new Date(formData.get("maturity_date").toString()),
+      maturity_date: new Date(maturityDateValue),
     };
 
     mutate(payload, {

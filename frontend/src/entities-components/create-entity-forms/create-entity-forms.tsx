@@ -3,16 +3,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog.tsx";
-
-import CreateLiquidAccountForm from "@/src/create-entity-forms/create-liquid-account.tsx";
-import CreateCreditCardForm from "@/src/create-entity-forms/create-credit-card.tsx";
-import CreateBondEntity from "@/src/create-entity-forms/create-bond.tsx";
-import CreateExternalContact from "@/src/create-entity-forms/create-external-contact.tsx";
-import CreateDematAccount from "@/src/create-entity-forms/create-demat-account.tsx";
-import CreateFixedDeposit from "@/src/create-entity-forms/create-fixed-deposit.tsx";
-import CreateMutualFund from "@/src/create-entity-forms/create-mutual-fund.tsx";
-import CreateVirtualEntity from "@/src/create-entity-forms/create-virtual-entity.tsx";
-import CreateStock from "@/src/create-entity-forms/create-stock.tsx";
+import CreateLiquidAccountForm from "@/src/entities-components/create-entity-forms/create-liquid-account.tsx";
+import CreateCreditCardForm from "@/src/entities-components/create-entity-forms/create-credit-card.tsx";
+import CreateBondEntity from "@/src/entities-components/create-entity-forms/create-bond.tsx";
+import CreateExternalContact from "@/src/entities-components/create-entity-forms/create-external-contact.tsx";
+import CreateDematAccount from "@/src/entities-components/create-entity-forms/create-demat-account.tsx";
+import CreateFixedDeposit from "@/src/entities-components/create-entity-forms/create-fixed-deposit.tsx";
+import CreateMutualFund from "@/src/entities-components/create-entity-forms/create-mutual-fund.tsx";
+import CreateVirtualEntity from "@/src/entities-components/create-entity-forms/create-virtual-entity.tsx";
+import CreateStock from "@/src/entities-components/create-entity-forms/create-stock.tsx";
 
 // 1. Map keys cleanly to components outside the render cycle
 const FORM_MAP: Record<string, React.ReactElement> = {
