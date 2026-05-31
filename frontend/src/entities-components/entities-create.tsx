@@ -22,10 +22,13 @@ import { Label } from "@/components/ui/label.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog.tsx";
 
+import { Link } from "@tanstack/react-router";
 import { getEntityTypes } from "@/src/service.ts";
 import CreateEntityForms from "@/src/entities-components/create-entity-forms/create-entity-forms.tsx";
+import { ListPlus } from "lucide-react";
+import { SchemaPayloadCard } from "@/src/entities-components/entities-schemas.tsx";
 
-// Helper function to handle string formatting cleanly outside the component layout
+// Clean string parsing utility
 const formatEntityLabel = (value: string): string => {
   if (!value) return "";
   return value
@@ -42,17 +45,41 @@ export default function CreateEntity() {
 
   const [selectedEntityType, setSelectedEntityType] = useState("");
 
-  // Safely sort cached data using useMemo to avoid mutating state inside your render cycle
+  // Memoized sorted listing to protect against runtime mutations
   const sortedEntityTypes = useMemo(() => {
     return [...entityTypes].sort();
   }, [entityTypes]);
 
   return (
     <Dialog>
-      <Card className="mx-5 my-5 h-full w-full max-w-xl">
-        <CardHeader>
-          <CardTitle>Create Your Entity</CardTitle>
-          <CardDescription>Choose Entity Type</CardDescription>
+      <SchemaPayloadCard selectedType={selectedEntityType} />
+      <Card
+        id="create-entities-card"
+        className="mx-auto my-6 h-full w-full max-w-xl border-border bg-secondary-background shadow-shadow font-base"
+      >
+        {/* Adjusted header configuration for better element alignment */}
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border/40">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-xl font-heading">
+              Create Your Entity
+            </CardTitle>
+            <CardDescription className="text-xs opacity-80">
+              Choose Entity Type
+            </CardDescription>
+          </div>
+          <div>
+            {/* Standardized TanStack pathing matching entities.bulk.tsx route specification */}
+            <Link to="/entities/bulk-create">
+              <Button
+                className="cursor-pointer"
+                title="Bulk Create Panel"
+                variant="neutral"
+                size="icon"
+              >
+                <ListPlus className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
 
         <CardContent>
@@ -92,19 +119,26 @@ export default function CreateEntity() {
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-2">
+        <CardFooter className="flex justify-end pt-4 border-t border-border/40">
           <DialogTrigger asChild>
             <Button
               disabled={!selectedEntityType}
-              type="button" // Changed from submit since there is no native HTML form wrapper
-              className="w-1/3"
+              type="button"
+              className={`w-1/3 font-heading uppercase text-xs tracking-wider transition-all
+                ${
+                selectedEntityType
+                  ? "bg-main text-main-foreground shadow-shadow hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                  : "opacity-40 cursor-not-allowed"
+              }
+              `}
             >
-              Enter
+              Enter Form
             </Button>
           </DialogTrigger>
         </CardFooter>
       </Card>
 
+      {/* Renders the selected schema tracking dynamic child elements */}
       <CreateEntityForms createEntityType={selectedEntityType} />
     </Dialog>
   );

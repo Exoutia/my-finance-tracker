@@ -20,6 +20,12 @@ export function Header() {
               Entities
             </Link>
             <Link
+              to="/transactions"
+              className="border-2 border-transparent px-3 py-1.5 transition-all hover:border-black hover:bg-main hover:text-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] [&.active]:border-black [&.active]:bg-main [&.active]:text-black [&.active]:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+            >
+              Transactions
+            </Link>
+            <Link
               to="/about"
               className="border-2 border-transparent px-3 py-1.5 transition-all hover:border-black hover:bg-main hover:text-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] [&.active]:border-black [&.active]:bg-main [&.active]:text-black [&.active]:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
             >

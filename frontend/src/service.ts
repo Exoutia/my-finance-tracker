@@ -284,3 +284,223 @@ export function createStock(data: StockCreate): Promise<StockRead> {
     body: JSON.stringify(data),
   });
 }
+
+export interface BlueprintField {
+  type: string;
+  required: boolean;
+  desc: string;
+}
+
+export const ENTITY_BLUEPRINT_REGISTRY: Record<
+  string,
+  Record<string, BlueprintField>
+> = {
+  liquid_account: {
+    name: {
+      type: "string",
+      required: true,
+      desc: "Ledger moniker or entity tracking alias.",
+    },
+    account_number: {
+      type: "string",
+      required: true,
+      desc: "Raw alphanumeric account or routing tracking ID.",
+    },
+    minimum_balance: {
+      type: "number",
+      required: true,
+      desc: "Threshold balance tracking baseline limit.",
+    },
+  },
+  credit_card: {
+    name: {
+      type: "string",
+      required: true,
+      desc: "Card variation descriptive name label.",
+    },
+    card_number: {
+      type: "string",
+      required: true,
+      desc: "Full card sequence or tracking identifier digits.",
+    },
+    limit: {
+      type: "string",
+      required: true,
+      desc: "Total maximum credit limit allowance ceiling value.",
+    },
+    statement_date: {
+      type: "number",
+      required: true,
+      desc: "Day of month when the billing period cycles (e.g. 15).",
+    },
+    grace_period: {
+      type: "number",
+      required: true,
+      desc: "Interest-free payment window calculation buffer in days.",
+    },
+  },
+  bonds: {
+    unique_id: {
+      type: "string",
+      required: true,
+      desc: "ISIN or internal sequence verification ID index number.",
+    },
+    name: {
+      type: "string",
+      required: true,
+      desc: "Bond registry asset or issue authority classification.",
+    },
+    coupon_interest_rate: {
+      type: "string",
+      required: true,
+      desc: "Yield payment rate sequence percentage descriptor.",
+    },
+    face_value: {
+      type: "string",
+      required: true,
+      desc: "Maturity base valuation premium metric total.",
+    },
+    maturity_date: {
+      type: "date",
+      required: true,
+      desc: "Final principal settlement fulfillment execution timeline date.",
+    },
+  },
+  person: {
+    name: {
+      type: "string",
+      required: true,
+      desc:
+        "Full text entity title descriptor or personal signature designation.",
+    },
+    tags: {
+      type: "string",
+      required: false,
+      desc: "Optional raw CSV or parsing comma values string.",
+    },
+    mobile_number: {
+      type: "string",
+      required: false,
+      desc: "Optional direct cellular configuration tracking parameters.",
+    },
+    description: {
+      type: "string",
+      required: false,
+      desc: "Optional contextual notes tracking background details.",
+    },
+  },
+
+  company: {
+    name: {
+      type: "string",
+      required: true,
+      desc:
+        "Full text entity title descriptor or personal signature designation.",
+    },
+    tags: {
+      type: "string",
+      required: false,
+      desc: "Optional raw CSV or parsing comma values string.",
+    },
+    mobile_number: {
+      type: "string",
+      required: false,
+      desc: "Optional direct cellular configuration tracking parameters.",
+    },
+    description: {
+      type: "string",
+      required: false,
+      desc: "Optional contextual notes tracking background details.",
+    },
+  },
+
+  demat_account: {
+    name: {
+      type: "string",
+      required: true,
+      desc: "Demat investment folio broker label.",
+    },
+    account_number: {
+      type: "string",
+      required: true,
+      desc: "Client ID tracking token designation digits.",
+    },
+    depository_participant: {
+      type: "string",
+      required: true,
+      desc: "CDSL or NSDL institutional manager identity name.",
+    },
+    dp_id: {
+      type: "string",
+      required: true,
+      desc:
+        "Depository Participant tracking reference verification identification code.",
+    },
+  },
+  fixed_deposit_account: {
+    bank_name: {
+      type: "string",
+      required: true,
+      desc: "Issuer banking counterparty identification desk moniker.",
+    },
+    fd_identifier: {
+      type: "string",
+      required: true,
+      desc: "Certificate tracking index number assignment receipt.",
+    },
+    principal_amount: {
+      type: "number",
+      required: true,
+      desc: "Initial corpus base asset total configuration valuation balance.",
+    },
+    interest_rate: {
+      type: "number",
+      required: true,
+      desc:
+        "Compound interest yield growth tracking baseline scalar percentage.",
+    },
+    maturity_date: {
+      type: "date",
+      required: true,
+      desc: "Locked terminal window distribution date target frame marker.",
+    },
+  },
+  mutual_fund: {
+    name: {
+      type: "string",
+      required: true,
+      desc: "Portfolio or Asset Management Company scheme title ledger marker.",
+    },
+    type: {
+      type: "string",
+      required: true,
+      desc:
+        "Must cleanly match: 'equity' | 'debt' | 'hybrid' | 'elss' | 'index'.",
+    },
+  },
+  stocks: {
+    symbol: {
+      type: "string",
+      required: true,
+      desc: "Market ticker identification equity token (e.g., RELIANCE, TCS).",
+    },
+    name: {
+      type: "string",
+      required: true,
+      desc: "Corporate legal entity listing index descriptive string.",
+    },
+  },
+  virtual_entity: {
+    name: {
+      type: "string",
+      required: true,
+      desc: "Logical abstract node grouping identification ledger framework.",
+    },
+    description: {
+      type: "string",
+      required: false,
+      desc:
+        "Optional contextual system architecture background documentation info.",
+    },
+  },
+};

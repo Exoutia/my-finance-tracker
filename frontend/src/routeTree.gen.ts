@@ -9,13 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as EntitiesRouteImport } from './routes/entities'
+import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EntitiesIndexRouteImport } from './routes/entities.index'
+import { Route as EntitiesBulkCreateRouteImport } from './routes/entities.bulk-create'
 
-const EntitiesRoute = EntitiesRouteImport.update({
-  id: '/entities',
-  path: '/entities',
+const TransactionsRoute = TransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -28,44 +30,73 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EntitiesIndexRoute = EntitiesIndexRouteImport.update({
+  id: '/entities/',
+  path: '/entities/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntitiesBulkCreateRoute = EntitiesBulkCreateRouteImport.update({
+  id: '/entities/bulk-create',
+  path: '/entities/bulk-create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/entities': typeof EntitiesRoute
+  '/transactions': typeof TransactionsRoute
+  '/entities/bulk-create': typeof EntitiesBulkCreateRoute
+  '/entities/': typeof EntitiesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/entities': typeof EntitiesRoute
+  '/transactions': typeof TransactionsRoute
+  '/entities/bulk-create': typeof EntitiesBulkCreateRoute
+  '/entities': typeof EntitiesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/entities': typeof EntitiesRoute
+  '/transactions': typeof TransactionsRoute
+  '/entities/bulk-create': typeof EntitiesBulkCreateRoute
+  '/entities/': typeof EntitiesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/entities'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/transactions'
+    | '/entities/bulk-create'
+    | '/entities/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/entities'
-  id: '__root__' | '/' | '/about' | '/entities'
+  to: '/' | '/about' | '/transactions' | '/entities/bulk-create' | '/entities'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/transactions'
+    | '/entities/bulk-create'
+    | '/entities/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  EntitiesRoute: typeof EntitiesRoute
+  TransactionsRoute: typeof TransactionsRoute
+  EntitiesBulkCreateRoute: typeof EntitiesBulkCreateRoute
+  EntitiesIndexRoute: typeof EntitiesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/entities': {
-      id: '/entities'
-      path: '/entities'
-      fullPath: '/entities'
-      preLoaderRoute: typeof EntitiesRouteImport
+    '/transactions': {
+      id: '/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof TransactionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -82,13 +113,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/entities/': {
+      id: '/entities/'
+      path: '/entities'
+      fullPath: '/entities/'
+      preLoaderRoute: typeof EntitiesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entities/bulk-create': {
+      id: '/entities/bulk-create'
+      path: '/entities/bulk-create'
+      fullPath: '/entities/bulk-create'
+      preLoaderRoute: typeof EntitiesBulkCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  EntitiesRoute: EntitiesRoute,
+  TransactionsRoute: TransactionsRoute,
+  EntitiesBulkCreateRoute: EntitiesBulkCreateRoute,
+  EntitiesIndexRoute: EntitiesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

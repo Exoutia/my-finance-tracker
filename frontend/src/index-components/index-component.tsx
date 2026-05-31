@@ -166,7 +166,7 @@ export default function Index() {
                 className="group flex items-center justify-between border-2 border-border bg-chart-1 text-main-foreground font-heading uppercase text-sm p-3 shadow-[3px_3px_0px_0px_var(--border)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_var(--border)]"
               >
                 <span className="flex items-center gap-2">
-                  <Plus className="h-4 w-4 stroke-[3]" />{" "}
+                  <Plus className="h-4 w-4 stroke-3" />{" "}
                   Register Investment Asset
                 </span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -177,7 +177,7 @@ export default function Index() {
                 className="group flex items-center justify-between border-2 border-border bg-chart-3 text-main-foreground font-heading uppercase text-sm p-3 shadow-[3px_3px_0px_0px_var(--border)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_var(--border)]"
               >
                 <span className="flex items-center gap-2">
-                  <Plus className="h-4 w-4 stroke-[3]" /> Record Liquidity Node
+                  <Plus className="h-4 w-4 stroke-3" /> Record Liquidity Node
                 </span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>

@@ -28,7 +28,8 @@ import { TableSkeleton } from "@/components/sekletons/skeleton-table.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { Button } from "@/components/ui/Button.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { ArrowDown } from "lucide-react";
 
 const columns: ColumnDef<Entity>[] = [
   {
@@ -42,6 +43,7 @@ const columns: ColumnDef<Entity>[] = [
           : false}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
+        className="translate-y-[2px]"
       />
     ),
     cell: ({ row }) => (
@@ -49,6 +51,7 @@ const columns: ColumnDef<Entity>[] = [
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
         aria-label="Select row"
+        className="translate-y-[2px]"
       />
     ),
     enableSorting: false,
@@ -56,25 +59,40 @@ const columns: ColumnDef<Entity>[] = [
   },
   {
     accessorKey: "name",
-    header: "Name",
+    header: () => (
+      <span className="font-heading text-xs uppercase tracking-wider">
+        Name
+      </span>
+    ),
+    cell: ({ row }) => (
+      <span className="font-base text-sm">{row.getValue("name")}</span>
+    ),
   },
   {
     accessorKey: "entity_type",
-    header: "Entity Type",
+    header: () => (
+      <span className="font-heading text-xs uppercase tracking-wider">
+        Entity Type
+      </span>
+    ),
     cell: ({ row }) => (
-      <div className="capitalize">
+      <div className="capitalize font-base text-sm text-foreground/90">
         {(row.getValue("entity_type") as string || "").split("_").join(" ")}
       </div>
     ),
   },
   {
     accessorKey: "uuid",
-    header: "UUID",
+    header: () => (
+      <span className="font-heading text-xs uppercase tracking-wider">
+        UUID
+      </span>
+    ),
     cell: ({ row }) => {
       const uuid: string = row.getValue("uuid") || "not found";
       return (
-        <div className="flex items-center gap-2">
-          <code className="text-xs bg-muted p-1 rounded">
+        <div className="flex items-center gap-2 font-mono">
+          <code className="text-xs bg-muted border border-border/40 px-1.5 py-0.5 rounded">
             {uuid.slice(0, 8)}...
           </code>
           <CopyButton value={uuid} />
@@ -84,15 +102,24 @@ const columns: ColumnDef<Entity>[] = [
   },
   {
     accessorKey: "tags",
-    header: "Tags",
+    header: () => (
+      <span className="font-heading text-xs uppercase tracking-wider">
+        Tags
+      </span>
+    ),
     cell: ({ row }) => {
       const val = row.getValue("tags");
       const tags = Array.isArray(val) && val.length >= 1 ? val : ["N/A"];
 
       return (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {tags.map((tag, index) => (
-            <Badge variant="colorful" tagName={tag} key={index}>
+            <Badge
+              variant="colorful"
+              tagName={tag}
+              key={index}
+              className="text-[11px] px-2 py-0.5"
+            >
               {tag}
             </Badge>
           ))}
@@ -107,24 +134,27 @@ export function EntitiesTable() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
+
+  // 3. Simple execution utility to scroll seamlessly to the bottom
+  const scrollToBottom = () => {
+    globalThis.scrollTo({
+      top: globalThis.document.documentElement.scrollHeight,
+      behavior: "smooth", // Native smooth window animation transition
+    });
+  };
   const [columnVisibility, setColumnVisibility] = React.useState<
     VisibilityState
   >({});
   const [rowSelection, setRowSelection] = React.useState({});
-
-  // 1. Local Pagination State Definition
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 5,
+    pageSize: 10,
   });
 
-  // 2. React Query Tracking Pagination State Updates
   const query = useQuery({
     queryKey: ["entities"],
     queryFn: getAllEntitiesAtOnce,
   });
-
-  // 3. Fallback safely to empty arrays and zero totals on initial load
   const serverData = query.data || [];
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -140,7 +170,6 @@ export function EntitiesTable() {
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelection,
-
     state: {
       sorting,
       columnFilters,
@@ -151,68 +180,79 @@ export function EntitiesTable() {
   });
 
   return (
-    <>
-      <div className="my-5 mx-5 min-w-180">
-        <div className="flex items-center gap-2 pb-4">
-          {query.isLoading
-            ? (
-              <div className="bg-secondary-background w-1/2">
-                <Skeleton className="h-10 bg-overlay w-full" />
-              </div>
-            )
-            : (
+    <div className="w-full flex flex-col font-base text-foreground">
+      {/* 1. Header Filter Row Layout */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 pb-4 border-b border-border/40">
+        {query.isLoading
+          ? (
+            <>
+              <Skeleton className="h-9 w-full sm:max-w-sm bg-overlay border border-border" />
+              <Skeleton className="h-9 w-full sm:max-w-sm bg-overlay border border-border" />
+            </>
+          )
+          : (
+            <>
               <Input
                 placeholder="Filter Account..."
                 value={(table.getColumn("name")?.getFilterValue() as string) ??
                   ""}
                 onChange={(event) =>
                   table.getColumn("name")?.setFilterValue(event.target.value)}
-                className="max-w-sm"
+                className="w-full sm:max-w-sm bg-secondary-background border-border shadow-none text-sm"
               />
-            )}
-          {query.isLoading
-            ? (
-              <div className="bg-secondary-background w-1/2">
-                <Skeleton className="h-10 bg-overlay w-full" />
-              </div>
-            )
-            : (
               <Input
-                placeholder="Filter Entity..."
+                placeholder="Filter Entity Type..."
                 value={(table.getColumn("entity_type")
                   ?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
                   table.getColumn("entity_type")?.setFilterValue(
                     event.target.value,
                   )}
-                className="max-w-sm"
+                className="w-full sm:max-w-sm bg-secondary-background border-border shadow-none text-sm"
               />
-            )}
-        </div>
+            </>
+          )}
+        <Button
+          onClick={scrollToBottom}
+          variant="neutral"
+          size="sm"
+          className="w-full sm:w-auto h-9 flex items-center justify-center gap-1.5 whitespace-nowrap bg-main text-main-foreground border-border shadow-shadow"
+          title="Scroll to bottom of ledger"
+        >
+          <ArrowDown className="h-4 w-4" />
+          <span>Go to Bottom</span>
+        </Button>
+      </div>
 
-        <Table className="min-w-4/5">
-          <TableHeader>
+      {/* 2. Structured Scrollable Data Table Container Container */}
+      <div className="w-full overflow-x-auto border border-border rounded-base bg-secondary-background my-4 shadow-shadow">
+        <Table className="w-full border-collapse">
+          <TableHeader className="bg-background border-b border-border">
             {query.isLoading
               ? <TableSkeleton columns={columns.length} rows={1} />
               : (
                 table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder ? null : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                        </TableHead>
-                      );
-                    })}
+                  <TableRow
+                    key={headerGroup.id}
+                    className="border-b border-border/40"
+                  >
+                    {headerGroup.headers.map((header) => (
+                      <TableHead
+                        key={header.id}
+                        className="h-10 text-foreground font-heading align-middle px-4"
+                      >
+                        {header.isPlaceholder ? null : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                      </TableHead>
+                    ))}
                   </TableRow>
                 ))
               )}
           </TableHeader>
-          <TableBody className="scroll-auto">
-            {/* 5. Switched to isFetching so page transitions visually trigger layout skeletons */}
+
+          <TableBody>
             {query.isFetching
               ? (
                 <TableSkeleton
@@ -224,12 +264,12 @@ export function EntitiesTable() {
               ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
-                    className="bg-secondary-background text-foreground data-[state=selected]:bg-main data-[state=selected]:text-main-foreground"
-                    data-state={row.getIsSelected() && "selected"}
                     key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b border-border/40 hover:bg-main/5 transition-colors data-[state=selected]:bg-main/20 data-[state=selected]:hover:bg-main/20"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell key={cell.id} className="p-4 align-middle">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -243,102 +283,100 @@ export function EntitiesTable() {
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-24 text-center"
+                    className="h-24 text-center text-sm opacity-60 font-base"
                   >
-                    No results.
+                    No entities found matching your filter constraints.
                   </TableCell>
                 </TableRow>
               )}
           </TableBody>
         </Table>
+      </div>
 
-        <div className="text-foreground flex flex-col sm:flex-row items-center justify-around gap-4 py-4 px-2 border-border">
-          <div className="text-foreground flex-1 text-sm">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
+      {/* 3. Footer Control Navigation Strip */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-3 px-1 border-t border-border/20 text-sm">
+        {/* Row Counters */}
+        <div className="text-xs opacity-70 order-2 md:order-1">
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
+
+        {/* Dynamic Pagination Action Blocks */}
+        <div className="flex flex-wrap items-center justify-center gap-4 order-1 md:order-2 w-full md:w-auto">
+          {/* Sizing Layout */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="opacity-80">Rows per page</span>
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              className="h-8 rounded-base border border-border bg-background px-2 py-1 outline-none shadow-none focus-visible:ring-1 focus-visible:ring-main cursor-pointer"
+            >
+              {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Right Side: Pagination Controls */}
-          <div className="flex flex-wrap items-center justify-center gap-6 order-1 sm:order-2">
-            {/* Page Navigation Buttons */}
-            <div className="flex items-center gap-1.5">
-              <Button
-                size="icon"
-                onClick={() => table.firstPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                <span className="sr-only">Go to first page</span>
-                {"<<"}
-              </Button>
-              <Button
-                size="icon"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                <span className="sr-only">Go to previous page</span>
-                {"<"}
-              </Button>
+          <div className="hidden sm:block h-4 w-px bg-border/60" />
 
-              {/* Page Input Counter */}
-              <div className="flex items-center gap-2 mx-2">
-                <Input
-                  type="number"
-                  max={table.getPageCount()}
-                  value={table.getState().pagination.pageIndex + 1}
-                  onChange={(e) => {
-                    const page = e.target.value
-                      ? Number(e.target.value) - 1
-                      : 0;
-                    table.setPageIndex(page);
-                  }}
-                  className="h-8 w-14 text-center p-1 border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                <span className="text-sm text-foreground">
-                  / {table.getPageCount() || 1}
-                </span>
-              </div>
+          {/* Navigational Step System */}
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="neutral"
+              onClick={() => table.firstPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="h-8 w-8 text-xs cursor-pointer"
+            >
+              {"<<"}
+            </Button>
+            <Button
+              size="icon"
+              variant="neutral"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="h-8 w-8 text-xs cursor-pointer"
+            >
+              {"<"}
+            </Button>
 
-              <Button
-                size="icon"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                <span className="sr-only">Go to next page</span>
-                {">"}
-              </Button>
-              <Button
-                size="icon"
-                onClick={() => table.lastPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                <span className="sr-only">Go to last page</span>
-                {">>"}
-              </Button>
-            </div>
-
-            {/* Vertical Divider */}
-            <div className="hidden md:block h-4 w-px bg-slate-200" />
-
-            {/* Page Size Selector */}
-            <div className="flex items-center gap-2">
-              <span>Rows per page</span>
-              <select
-                value={table.getState().pagination.pageSize}
+            <div className="flex items-center gap-1.5 mx-1 text-xs">
+              <Input
+                type="number"
+                max={table.getPageCount()}
+                value={table.getState().pagination.pageIndex + 1}
                 onChange={(e) => {
-                  table.setPageSize(Number(e.target.value));
+                  const page = e.target.value ? Number(e.target.value) - 1 : 0;
+                  table.setPageIndex(page);
                 }}
-                className="h-8 rounded-md border border-border bg-secondary-background px-2 py-1 shadow-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 cursor-pointer"
-              >
-                {[5, 10, 20, 30, 40, 50].map((pageSize) => (
-                  <option key={pageSize} value={pageSize}>
-                    {pageSize}
-                  </option>
-                ))}
-              </select>
+                className="h-8 w-12 text-center p-1 border-border bg-background shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="opacity-60">/ {table.getPageCount() || 1}</span>
             </div>
+
+            <Button
+              size="icon"
+              variant="neutral"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="h-8 w-8 text-xs cursor-pointer"
+            >
+              {">"}
+            </Button>
+            <Button
+              size="icon"
+              variant="neutral"
+              onClick={() => table.lastPage()}
+              disabled={!table.getCanNextPage()}
+              className="h-8 w-8 text-xs cursor-pointer"
+            >
+              {">>"}
+            </Button>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
