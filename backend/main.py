@@ -1,4 +1,6 @@
-from typing import Annotated
+import codecs
+import csv
+from typing import Annotated, Any, Dict
 from uuid import UUID
 
 import schemas
@@ -6,10 +8,11 @@ import service
 import uvicorn
 from config import settings
 from db import create_db_and_tables, get_session
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile, status
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 from sqlmodel import Session
 
 
@@ -62,6 +65,7 @@ async def entity_already_exists_exception_handler(request: Request, exc: service
 
 
 SessionDep = Annotated[Session, Depends(get_session)]
+FileDep = Annotated[UploadFile, File(...)]
 
 
 @app.get("/")
@@ -332,6 +336,97 @@ def get_entity_from_uuid(session: SessionDep, item_uuid: UUID):
         return data
     except service.DBException as err:
         raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
+# Global Constants for Security Boundaries
+MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024  # Strict 2MB File Cap
+MAX_ROW_CEILING = 1000  # Maximum rows allowed in a single batch
+ALLOWED_MIME_TYPES = ["text/csv", "application/vnd.ms-excel"]
+
+
+def sanitize_csv_cell(value: str) -> Any:
+    """Strip formula prefix tokens to immunize against CSV Injection Attacks."""
+    stripped = value.strip()
+    if stripped.startswith(("=", "+", "-", "@")):
+        # Prepend a single quote to neutralize formula execution in Excel/Sheets
+        return f"'{stripped}'"
+    return stripped
+
+
+@app.post(
+    "/liquid-accounts/bulk-upload",
+    response_model=list[schemas.LiquidAccountRead],
+    status_code=status.HTTP_201_CREATED,
+)
+async def bulk_create_liquid_accounts(session: SessionDep, file: FileDep):
+    if file.content_type not in ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Unsupported file format. System strictly accepts standard UTF-8 CSV streams.",
+        )
+
+    file_bytes = await file.read()
+    if len(file_bytes) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File wrapper exceeds max allowed limit of {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB.",
+        )
+
+    csv_text_generator = codecs.iterdecode(file_bytes.splitlines(), "utf-8")
+
+    reader = csv.DictReader(csv_text_generator)
+
+    expected_fields = set(["name", "account_number", "minimum_balance"])
+    if not reader.fieldnames or not expected_fields.issubset(set(reader.fieldnames)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid template format. Header must strictly contain: {', '.join(expected_fields)}",
+        )
+
+    validated_instances: list[schemas.LiquidAccountCreate] = []
+    row_counter = 0
+
+    for row in reader:
+        row_counter += 1
+
+        if row_counter > MAX_ROW_CEILING:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Bulk payload processing limit reached. Max limit is {MAX_ROW_CEILING} rows per execution.",
+            )
+
+        if not any(row.values()):
+            continue
+
+        try:
+            sanitized_payload: Dict[str, Any] = {
+                key: sanitize_csv_cell(val) if isinstance(val, str) else val for key, val in row.items()
+            }
+
+            account_data = schemas.LiquidAccountCreate(**sanitized_payload)
+            validated_instances.append(account_data)
+
+        except ValidationError as validation_err:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Data typing error at row {row_counter}: {validation_err.errors()[0]['msg']}",
+            ) from validation_err
+
+    if not validated_instances:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The uploaded file contains no valid ledger records to ingest.",
+        )
+
+    try:
+        created_records = service.bulk_insert_liquid_accounts(session, validated_instances)
+        return created_records
+    except Exception as db_err:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database persistence error during batch ingestion stream execution.",
+        ) from db_err
 
 
 @app.get("/entities/metadata/{item_uuid}")

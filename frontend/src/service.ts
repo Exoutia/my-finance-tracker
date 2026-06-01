@@ -29,7 +29,6 @@ export interface PaginatedEntity {
 
 export type PaginatedInputQueryKey = [string, PaginationState];
 
-// --- Core API Request Wrapper ---
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -40,16 +39,18 @@ export async function apiRequest<T>(
     : null;
 
   const headers = new Headers(options.headers);
-  headers.set("Content-Type", "application/json");
+
+  if (!(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
 
   if (dbPassword) {
     headers.set("X-DB-Password", dbPassword);
   }
 
-  // endpoint should be something like "/" or "/transactions"
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
-    headers,
+    headers, // Seamlessly forwards multi-part boundaries if FormData was detected
   });
 
   if (!response.ok) {
@@ -65,8 +66,6 @@ export async function apiRequest<T>(
 
   return response.json() as Promise<T>;
 }
-
-// --- GET Requests (Stop swallowing errors, let TanStack Query handle them!) ---
 
 export function getEntities(): Promise<Entity[]> {
   return apiRequest<Entity[]>("/entities");
@@ -373,6 +372,11 @@ export const ENTITY_BLUEPRINT_REGISTRY: Record<
       desc:
         "Full text entity title descriptor or personal signature designation.",
     },
+    isInstitution: {
+      type: "boolean",
+      required: true,
+      desc: "required value: false",
+    },
     tags: {
       type: "string",
       required: false,
@@ -396,6 +400,11 @@ export const ENTITY_BLUEPRINT_REGISTRY: Record<
       required: true,
       desc:
         "Full text entity title descriptor or personal signature designation.",
+    },
+    isInstitution: {
+      type: "boolean",
+      required: true,
+      desc: "required value: true",
     },
     tags: {
       type: "string",
@@ -504,3 +513,22 @@ export const ENTITY_BLUEPRINT_REGISTRY: Record<
     },
   },
 };
+
+export interface BulkUploadResponse {
+  message: string;
+  count: number;
+  records: LiquidAccountRead[];
+}
+
+export function bulkCreateLiquidAccounts(
+  formData: FormData,
+): Promise<LiquidAccountRead[]> {
+  return apiRequest<LiquidAccountRead[]>(
+    "/liquid-accounts/bulk-upload",
+    {
+      method: "POST",
+      body: formData,
+      headers: new Headers({}),
+    },
+  );
+}

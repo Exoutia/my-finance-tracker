@@ -2,7 +2,7 @@ import { GitBranch, Info, ShieldAlert, Sparkles } from "lucide-react";
 
 export default function About() {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       {/* Hero Welcome Card */}
       <section className="mb-8 border-4 border-border bg-main p-6 shadow-shadow text-main-foreground">
         <div className="flex items-center gap-3 mb-3">

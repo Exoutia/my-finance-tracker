@@ -52,93 +52,97 @@ export default function CreateEntity() {
 
   return (
     <Dialog>
-      <SchemaPayloadCard selectedType={selectedEntityType} />
-      <Card
-        id="create-entities-card"
-        className="mx-auto my-6 h-full w-full max-w-xl border-border bg-secondary-background shadow-shadow font-base"
-      >
-        {/* Adjusted header configuration for better element alignment */}
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border/40">
-          <div className="flex flex-col gap-1">
-            <CardTitle className="text-xl font-heading">
-              Create Your Entity
-            </CardTitle>
-            <CardDescription className="text-xs opacity-80">
-              Choose Entity Type
-            </CardDescription>
-          </div>
-          <div>
-            {/* Standardized TanStack pathing matching entities.bulk.tsx route specification */}
-            <Link to="/entities/bulk-create">
+      <div className="mx-auto my-6 grid w-full max-w-xl grid-cols-1 items-start gap-6 px-4 sm:px-6 lg:max-w-6xl lg:grid-cols-12">
+        {/* 2. LEFT SIDE / TOP PANEL: The Interactive Input Creation Form (Occupies 5 spans out of 12 on large screens) */}
+        <Card
+          id="create-entities-card"
+          className="h-full sm:max-h-87.5 w-full border-border bg-secondary-background shadow-shadow font-base lg:col-span-5"
+        >
+          {/* Adjusted header configuration for better element alignment */}
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border/40">
+            <div className="flex flex-col gap-1">
+              <CardTitle className="text-xl font-heading">
+                Create Your Entity
+              </CardTitle>
+              <CardDescription className="text-xs opacity-80">
+                Choose Entity Type
+              </CardDescription>
+            </div>
+            <div>
+              {/* Standardized TanStack pathing matching entities.bulk.tsx route specification */}
+              <Link to="/entities/bulk-create">
+                <Button
+                  className="cursor-pointer"
+                  title="Bulk Create Panel"
+                  variant="neutral"
+                  size="icon"
+                >
+                  <ListPlus className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+
+          <CardContent className="pt-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:gap-6">
+              {/* Entity Selector */}
+              <div className="grid w-full gap-2">
+                <Label htmlFor="entity-type">Entity Type</Label>
+                <Select
+                  value={selectedEntityType}
+                  onValueChange={setSelectedEntityType}
+                >
+                  <SelectTrigger id="entity-type" className="w-full">
+                    <SelectValue placeholder="Select Entity Type">
+                      {selectedEntityType
+                        ? formatEntityLabel(selectedEntityType)
+                        : ""}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Entities</SelectLabel>
+                      {sortedEntityTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {formatEntityLabel(type)}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid w-full gap-2">
+                <Label htmlFor="entity-tags">Tags</Label>
+                <Input id="entity-tags" placeholder="e.g. production, test" />
+              </div>
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex justify-end pt-4 border-t border-border/40">
+            <DialogTrigger asChild>
               <Button
-                className="cursor-pointer"
-                title="Bulk Create Panel"
-                variant="neutral"
-                size="icon"
+                disabled={!selectedEntityType}
+                type="button"
+                className={`w-full sm:w-1/3 font-heading uppercase text-xs tracking-wider transition-all
+                  ${
+                  selectedEntityType
+                    ? "bg-main text-main-foreground shadow-shadow hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+                    : "opacity-40 cursor-not-allowed"
+                }
+                `}
               >
-                <ListPlus className="h-4 w-4" />
+                Enter Form
               </Button>
-            </Link>
-          </div>
-        </CardHeader>
+            </DialogTrigger>
+          </CardFooter>
+        </Card>
 
-        <CardContent>
-          <div className="flex flex-row justify-between gap-6">
-            {/* Entity Selector */}
-            <div className="grid w-full gap-2">
-              <Label htmlFor="entity-type">Entity Type</Label>
-              <Select
-                value={selectedEntityType}
-                onValueChange={setSelectedEntityType}
-              >
-                <SelectTrigger id="entity-type" className="w-full">
-                  <SelectValue placeholder="Select Entity Type">
-                    {selectedEntityType
-                      ? formatEntityLabel(selectedEntityType)
-                      : ""}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent position="item-aligned">
-                  <SelectGroup>
-                    <SelectLabel>Entities</SelectLabel>
-                    {sortedEntityTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {formatEntityLabel(type)}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="w-full lg:col-span-7">
+          <SchemaPayloadCard selectedType={selectedEntityType} />
+        </div>
+      </div>
 
-            {/* Tags Input Placeholder */}
-            <div className="grid w-full gap-2">
-              <Label htmlFor="entity-tags">Tags</Label>
-              <Input id="entity-tags" placeholder="e.g. production, test" />
-            </div>
-          </div>
-        </CardContent>
-
-        <CardFooter className="flex justify-end pt-4 border-t border-border/40">
-          <DialogTrigger asChild>
-            <Button
-              disabled={!selectedEntityType}
-              type="button"
-              className={`w-1/3 font-heading uppercase text-xs tracking-wider transition-all
-                ${
-                selectedEntityType
-                  ? "bg-main text-main-foreground shadow-shadow hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
-                  : "opacity-40 cursor-not-allowed"
-              }
-              `}
-            >
-              Enter Form
-            </Button>
-          </DialogTrigger>
-        </CardFooter>
-      </Card>
-
-      {/* Renders the selected schema tracking dynamic child elements */}
       <CreateEntityForms createEntityType={selectedEntityType} />
     </Dialog>
   );

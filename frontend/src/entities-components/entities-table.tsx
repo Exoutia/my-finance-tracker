@@ -29,7 +29,8 @@ import { Input } from "@/components/ui/input.tsx";
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, ListPlus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 const columns: ColumnDef<Entity>[] = [
   {
@@ -43,7 +44,7 @@ const columns: ColumnDef<Entity>[] = [
           : false}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
-        className="translate-y-[2px]"
+        className="translate-y-0.5 cursor-pointer"
       />
     ),
     cell: ({ row }) => (
@@ -51,7 +52,7 @@ const columns: ColumnDef<Entity>[] = [
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
         aria-label="Select row"
-        className="translate-y-[2px]"
+        className="translate-y-0.5 cursor-pointer"
       />
     ),
     enableSorting: false,
@@ -182,7 +183,7 @@ export function EntitiesTable() {
   return (
     <div className="w-full flex flex-col font-base text-foreground">
       {/* 1. Header Filter Row Layout */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 pb-4 border-b border-border/40">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-4 border-b border-border/40">
         {query.isLoading
           ? (
             <>
@@ -191,7 +192,7 @@ export function EntitiesTable() {
             </>
           )
           : (
-            <>
+            <div className="flex sm:w-2/3 gap-2.5 flex-col w-full sm:flex-row ">
               <Input
                 placeholder="Filter Account..."
                 value={(table.getColumn("name")?.getFilterValue() as string) ??
@@ -210,18 +211,31 @@ export function EntitiesTable() {
                   )}
                 className="w-full sm:max-w-sm bg-secondary-background border-border shadow-none text-sm"
               />
-            </>
+            </div>
           )}
-        <Button
-          onClick={scrollToBottom}
-          variant="neutral"
-          size="sm"
-          className="w-full sm:w-auto h-9 flex items-center justify-center gap-1.5 whitespace-nowrap bg-main text-main-foreground border-border shadow-shadow"
-          title="Scroll to bottom of ledger"
-        >
-          <ArrowDown className="h-4 w-4" />
-          <span>Go to Bottom</span>
-        </Button>
+        <div className="flex justify-end gap-3">
+          <Button
+            onClick={scrollToBottom}
+            variant="default"
+            size="sm"
+            className="w-full sm:w-auto h-9 flex items-center justify-center gap-1.5 whitespace-nowrap bg-main text-main-foreground border-border shadow-shadow"
+            title="Scroll to bottom of ledger"
+          >
+            <ArrowDown className="h-4 w-4" />
+            <span>Go to Bottom</span>
+          </Button>
+          <Link to="/entities/bulk-create">
+            <Button
+              variant="default"
+              size="sm"
+              className="w-full sm:w-auto h-9 flex items-center justify-center gap-1.5 whitespace-nowrap bg-main text-main-foreground border-border shadow-shadow"
+              title="Scroll to bottom of ledger"
+            >
+              <ListPlus className="h-4 w-4" />
+              <span>Bulk Insert</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* 2. Structured Scrollable Data Table Container Container */}

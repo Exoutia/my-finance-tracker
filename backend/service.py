@@ -14,7 +14,7 @@ from models import (
     Transaction,
     VirtualEntity,
 )
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlmodel import Session, func, select
 
 
@@ -494,3 +494,64 @@ def get_all_liquid_accounts(db: Session, offset: int, limit: int):
         return data
     except Exception as e:
         raise DBException(e) from e
+
+
+def bulk_insert_liquid_accounts(db: Session, items: list[schemas.LiquidAccountCreate]):
+    """
+    High-performance polymorphic bulk creation.
+    Flushes parent records concurrently to skip recursive database round-trips.
+    """
+    entity_type = schemas.EntityType.LIQUID_ACCOUNT
+    table_name = schemas.ENTITY_TYPE_TO_TABLE[entity_type]
+
+    staged_registries: list[EntityRegistry] = []
+    staged_accounts: list[LiquidAccount] = []
+
+    try:
+        # STEP 1: Fast iteration to construct parent registry objects
+        for item_data in items:
+            suffix = item_data.account_number[-4:] if len(item_data.account_number) >= 4 else item_data.account_number
+            registry_name = f"{item_data.name}-{suffix}"
+
+            reg_entry = EntityRegistry(name=registry_name, entity_type=entity_type, table_name=table_name)
+            staged_registries.append(reg_entry)
+            db.add(reg_entry)
+
+        # Emit a SINGLE bulk flush to generate UUID keys for all parent rows at once
+        try:
+            db.flush()
+        except IntegrityError as e:
+            db.rollback()
+            # Catching naming constraints early across the payload array
+            raise EntityAlreadyExistsError(
+                "A record within this batch payload already exists in the entity registry."
+            ) from e
+
+        # STEP 2: Map newly allocated UUID keys directly to your LiquidAccount instances
+        for index, item_data in enumerate(items):
+            # No .refresh() needed! The staging flush populates this attribute automatically.
+            assigned_uuid = staged_registries[index].uuid
+
+            account_entry = LiquidAccount(
+                uuid=assigned_uuid,
+                name=item_data.name,
+                account_number=item_data.account_number,
+                minimum_balance=item_data.minimum_balance,
+            )
+            staged_accounts.append(account_entry)
+            db.add(account_entry)
+
+        # STEP 3: Atomic database commit execution
+        db.commit()
+
+        # Refresh only the final metadata structures returned to the API layer response model
+        for account in staged_accounts:
+            db.refresh(account)
+
+        return staged_accounts
+
+    except SQLAlchemyError as err:
+        db.rollback()
+        if not isinstance(err, EntityAlreadyExistsError):
+            raise DBException("Bulk creation aborted due to database transaction constraints.") from err
+        raise

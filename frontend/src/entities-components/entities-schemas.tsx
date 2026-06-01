@@ -18,7 +18,7 @@ export function SchemaPayloadCard({ selectedType }: SchemaPayloadCardProps) {
   const activeBlueprint = ENTITY_BLUEPRINT_REGISTRY[selectedType];
 
   return (
-    <div className="mx-auto my-6 h-full w-full max-w-xl border border-border bg-secondary-background p-5 shadow-shadow font-base text-foreground rounded-base">
+    <div className="mx-auto my-6 h-full w-full max-w-xl min-h-87.5 sm:my-0 border border-border bg-secondary-background p-5 shadow-shadow font-base text-foreground rounded-base">
       {/* Structural Title Area */}
       <div className="mb-4 border-b border-border/40 pb-3">
         <h3 className="font-heading text-lg tracking-wide capitalize">
