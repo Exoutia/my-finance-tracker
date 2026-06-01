@@ -1,6 +1,6 @@
 import codecs
 import csv
-from typing import Annotated, Any, Dict
+from typing import Annotated, Any, Callable, Dict, List, Type
 from uuid import UUID
 
 import schemas
@@ -12,7 +12,7 @@ from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, Uploa
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from sqlmodel import Session
 
 
@@ -338,27 +338,32 @@ def get_entity_from_uuid(session: SessionDep, item_uuid: UUID):
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
-# Global Constants for Security Boundaries
+# Global Security & Threshold Configuration Boundaries
 MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024  # Strict 2MB File Cap
-MAX_ROW_CEILING = 1000  # Maximum rows allowed in a single batch
+MAX_ROW_CEILING = 1000  # Maximum rows allowed in a single batch file
 ALLOWED_MIME_TYPES = ["text/csv", "application/vnd.ms-excel"]
 
 
 def sanitize_csv_cell(value: str) -> Any:
-    """Strip formula prefix tokens to immunize against CSV Injection Attacks."""
+    """Neutralize formula symbols to immunize the dataset against CSV Injection attacks."""
     stripped = value.strip()
     if stripped.startswith(("=", "+", "-", "@")):
-        # Prepend a single quote to neutralize formula execution in Excel/Sheets
         return f"'{stripped}'"
     return stripped
 
 
-@app.post(
-    "/liquid-accounts/bulk-upload",
-    response_model=list[schemas.LiquidAccountRead],
-    status_code=status.HTTP_201_CREATED,
-)
-async def bulk_create_liquid_accounts(session: SessionDep, file: FileDep):
+async def process_bulk_csv_payload(
+    file: UploadFile,
+    schema_model: Type[BaseModel],
+    expected_fields: set[str],
+    bulk_insert_fn: Callable[[Session, List[Any]], List[Any]],
+    session: Session,
+) -> List[Any]:
+    """
+    Polymorphic core parser pipeline processing security validations,
+    data type constraints parsing, and calling custom transactional services.
+    """
+    # 1. Enforce MIME Security Boundaries
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -372,20 +377,21 @@ async def bulk_create_liquid_accounts(session: SessionDep, file: FileDep):
             detail=f"File wrapper exceeds max allowed limit of {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB.",
         )
 
+    # 2. Decode Text Content Safely
     csv_text_generator = codecs.iterdecode(file_bytes.splitlines(), "utf-8")
-
     reader = csv.DictReader(csv_text_generator)
 
-    expected_fields = set(["name", "account_number", "minimum_balance"])
+    # 3. Structural Header Mapping Inspection
     if not reader.fieldnames or not expected_fields.issubset(set(reader.fieldnames)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid template format. Header must strictly contain: {', '.join(expected_fields)}",
+            detail=f"Invalid template formatting. Header must contain fields: {', '.join(expected_fields)}",
         )
 
-    validated_instances: list[schemas.LiquidAccountCreate] = []
+    validated_instances: List[Any] = []
     row_counter = 0
 
+    # 4. Stream Validation & Sanitization Loop
     for row in reader:
         row_counter += 1
 
@@ -399,34 +405,146 @@ async def bulk_create_liquid_accounts(session: SessionDep, file: FileDep):
             continue
 
         try:
+            # Inline Cell-by-Cell Sanitization
             sanitized_payload: Dict[str, Any] = {
                 key: sanitize_csv_cell(val) if isinstance(val, str) else val for key, val in row.items()
             }
 
-            account_data = schemas.LiquidAccountCreate(**sanitized_payload)
-            validated_instances.append(account_data)
+            # Handle parsing rules or custom mappings cleanly
+            if "isInstitution" in sanitized_payload:
+                # Map incoming strings or flags gracefully to actual bool primitives
+                val_str = str(sanitized_payload["isInstitution"]).lower()
+                sanitized_payload["is_institution"] = val_str in ("true", "1", "yes")
+
+            instance = schema_model(**sanitized_payload)
+            validated_instances.append(instance)
 
         except ValidationError as validation_err:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Data typing error at row {row_counter}: {validation_err.errors()[0]['msg']}",
+                detail=f"Data schema layout anomaly at row {row_counter}: {validation_err.errors()[0]['msg']}",
             ) from validation_err
 
     if not validated_instances:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The uploaded file contains no valid ledger records to ingest.",
+            detail="The uploaded file contains no valid structural rows to ingest.",
         )
 
+    # 5. Persist Atomic Batch Transactions Direct To Database
     try:
-        created_records = service.bulk_insert_liquid_accounts(session, validated_instances)
+        created_records = bulk_insert_fn(session, validated_instances)
         return created_records
+    except service.EntityAlreadyExistsError as duplicate_err:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(duplicate_err),
+        ) from duplicate_err
     except Exception as db_err:
         session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database persistence error during batch ingestion stream execution.",
         ) from db_err
+
+
+# --- POLYMORPHIC ENDPOINT ROUTER LAYER ---
+
+
+@app.post(
+    "/liquid-accounts/bulk-upload", response_model=List[schemas.LiquidAccountRead], status_code=status.HTTP_201_CREATED
+)
+async def bulk_upload_liquid_accounts(session: SessionDep, file: FileDep):
+    return await process_bulk_csv_payload(
+        file,
+        schemas.LiquidAccountCreate,
+        {"name", "account_number", "minimum_balance"},
+        service.bulk_insert_liquid_accounts,
+        session,
+    )
+
+
+@app.post("/credit-cards/bulk-upload", response_model=List[schemas.CreditCardRead], status_code=status.HTTP_201_CREATED)
+async def bulk_upload_credit_cards(session: SessionDep, file: FileDep):
+    return await process_bulk_csv_payload(
+        file,
+        schemas.CreditCardCreate,
+        {"name", "card_number", "limit", "statement_date", "grace_period"},
+        service.bulk_insert_credit_cards,
+        session,
+    )
+
+
+@app.post("/bonds/bulk-upload", response_model=List[schemas.BondRead], status_code=status.HTTP_201_CREATED)
+async def bulk_upload_bonds(session: SessionDep, file: FileDep):
+    return await process_bulk_csv_payload(
+        file,
+        schemas.BondCreate,
+        {"unique_id", "name", "coupon_interest_rate", "face_value", "maturity_date"},
+        service.bulk_insert_bonds,
+        session,
+    )
+
+
+@app.post(
+    "/demat-accounts/bulk-upload", response_model=List[schemas.DematAccountRead], status_code=status.HTTP_201_CREATED
+)
+async def bulk_upload_demat_accounts(session: SessionDep, file: FileDep):
+    return await process_bulk_csv_payload(
+        file,
+        schemas.DematAccountCreate,
+        {"name", "account_number", "depository_participant", "dp_id"},
+        service.bulk_insert_demat_accounts,
+        session,
+    )
+
+
+@app.post(
+    "/fixed-deposits/bulk-upload", response_model=List[schemas.FixedDepositRead], status_code=status.HTTP_201_CREATED
+)
+async def bulk_upload_fixed_deposits(session: SessionDep, file: FileDep):
+    return await process_bulk_csv_payload(
+        file,
+        schemas.FixedDepositCreate,
+        {"bank_name", "fd_identifier", "principal_amount", "interest_rate", "maturity_date"},
+        service.bulk_insert_fixed_deposits,
+        session,
+    )
+
+
+@app.post("/mutual-funds/bulk-upload", response_model=List[schemas.MutualFundRead], status_code=status.HTTP_201_CREATED)
+async def bulk_upload_mutual_funds(session: SessionDep, file: FileDep):
+    return await process_bulk_csv_payload(
+        file, schemas.MutualFundCreate, {"name", "type"}, service.bulk_insert_mutual_funds, session
+    )
+
+
+@app.post("/stocks/bulk-upload", response_model=List[schemas.StockRead], status_code=status.HTTP_201_CREATED)
+async def bulk_upload_stocks(session: SessionDep, file: FileDep):
+    return await process_bulk_csv_payload(
+        file, schemas.StockCreate, {"symbol", "name"}, service.bulk_insert_stocks, session
+    )
+
+
+@app.post(
+    "/external-contacts/bulk-upload",
+    response_model=List[schemas.ExternalContactRead],
+    status_code=status.HTTP_201_CREATED,
+)
+async def bulk_upload_external_contacts(session: SessionDep, file: FileDep):
+    # Combines both "person" and "company" schemas into unified ExternalContact structural mapping
+    return await process_bulk_csv_payload(
+        file, schemas.ExternalContactCreate, {"name", "isInstitution"}, service.bulk_insert_external_contacts, session
+    )
+
+
+@app.post(
+    "/virtual-entities/bulk-upload", response_model=List[schemas.VirtualEntityRead], status_code=status.HTTP_201_CREATED
+)
+async def bulk_upload_virtual_entities(session: SessionDep, file: FileDep):
+    return await process_bulk_csv_payload(
+        file, schemas.VirtualEntityCreate, {"name"}, service.bulk_insert_virtual_entities, session
+    )
 
 
 @app.get("/entities/metadata/{item_uuid}")

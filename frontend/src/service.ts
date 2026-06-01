@@ -514,12 +514,6 @@ export const ENTITY_BLUEPRINT_REGISTRY: Record<
   },
 };
 
-export interface BulkUploadResponse {
-  message: string;
-  count: number;
-  records: LiquidAccountRead[];
-}
-
 export function bulkCreateLiquidAccounts(
   formData: FormData,
 ): Promise<LiquidAccountRead[]> {
@@ -531,4 +525,76 @@ export function bulkCreateLiquidAccounts(
       headers: new Headers({}),
     },
   );
+}
+
+export function bulkCreateCreditCard(
+  formData: FormData,
+): Promise<CreditCardRead[]> {
+  return apiRequest<CreditCardRead[]>(
+    "/credit-cards/bulk-upload",
+    {
+      method: "POST",
+      body: formData,
+      headers: new Headers({}),
+    },
+  );
+}
+
+export function bulkCreateBonds(formData: FormData): Promise<BondRead[]> {
+  return apiRequest<BondRead[]>("/bonds/bulk-upload", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function bulkCreateDematAccounts(
+  formData: FormData,
+): Promise<DematAccountRead[]> {
+  return apiRequest<DematAccountRead[]>("/demat-accounts/bulk-upload", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function bulkCreateFixedDeposits(
+  formData: FormData,
+): Promise<FixedDepositRead[]> {
+  return apiRequest<FixedDepositRead[]>("/fixed-deposits/bulk-upload", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function bulkCreateMutualFunds(
+  formData: FormData,
+): Promise<MutualFundRead[]> {
+  return apiRequest<MutualFundRead[]>("/mutual-funds/bulk-upload", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function bulkCreateStocks(formData: FormData): Promise<StockRead[]> {
+  return apiRequest<StockRead[]>("/stocks/bulk-upload", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function bulkCreateExternalContacts(
+  formData: FormData,
+): Promise<ExternalContactRead[]> {
+  return apiRequest<ExternalContactRead[]>("/external-contacts/bulk-upload", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function bulkCreateVirtualEntities(
+  formData: FormData,
+): Promise<VirtualEntityRead[]> {
+  return apiRequest<VirtualEntityRead[]>("/virtual-entities/bulk-upload", {
+    method: "POST",
+    body: formData,
+  });
 }

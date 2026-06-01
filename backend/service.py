@@ -1,3 +1,4 @@
+from typing import List
 from uuid import UUID
 
 import schemas
@@ -555,3 +556,222 @@ def bulk_insert_liquid_accounts(db: Session, items: list[schemas.LiquidAccountCr
         if not isinstance(err, EntityAlreadyExistsError):
             raise DBException("Bulk creation aborted due to database transaction constraints.") from err
         raise
+
+
+def _bulk_create_base_registries(
+    db: Session, item_names: List[str], entity_type: schemas.EntityType, table_name: str
+) -> List[EntityRegistry]:
+    """Helper macro to safely allocate structural parent IDs for tracking."""
+    staged_registries = []
+    for name in item_names:
+        reg_entry = EntityRegistry(name=name, entity_type=entity_type, table_name=table_name)
+        staged_registries.append(reg_entry)
+        db.add(reg_entry)
+
+    try:
+        db.flush()
+        return staged_registries
+    except IntegrityError as e:
+        db.rollback()
+        raise EntityAlreadyExistsError(
+            "Ingestion halted: One or more data record unique identifiers collide with existing indices."
+        ) from e
+
+
+def bulk_insert_credit_cards(db: Session, items: list[schemas.CreditCardCreate]) -> list[CreditCard]:
+    entity_type = schemas.EntityType.CREDIT_CARD
+    table_name = schemas.ENTITY_TYPE_TO_TABLE[entity_type]
+
+    names = [f"{i.name}-{i.card_number[-4:] if len(i.card_number) >= 4 else i.card_number}" for i in items]
+    registries = _bulk_create_base_registries(db, names, entity_type, table_name)
+
+    staged_records = []
+    for idx, item in enumerate(items):
+        record = CreditCard(
+            uuid=registries[idx].uuid,
+            name=item.name,
+            card_number=item.card_number,
+            limit=item.limit,
+            grace_period=item.grace_period,
+            statement_date=item.statement_date,
+        )
+        staged_records.append(record)
+        db.add(record)
+
+    db.commit()
+    for r in staged_records:
+        db.refresh(r)
+    return staged_records
+
+
+def bulk_insert_bonds(db: Session, items: list[schemas.BondCreate]) -> list[Bond]:
+    entity_type = schemas.EntityType.BONDS
+    table_name = schemas.ENTITY_TYPE_TO_TABLE[entity_type]
+
+    names = [f"{i.name}-{i.unique_id[-4:] if len(i.unique_id) >= 4 else i.unique_id}" for i in items]
+    registries = _bulk_create_base_registries(db, names, entity_type, table_name)
+
+    staged_records = []
+    for idx, item in enumerate(items):
+        record = Bond(
+            uuid=registries[idx].uuid,
+            name=item.name,
+            unique_id=item.unique_id,
+            face_value=item.face_value,
+            maturity_date=item.maturity_date,
+            coupon_interest_rate=item.coupon_interest_rate,
+        )
+        staged_records.append(record)
+        db.add(record)
+
+    db.commit()
+    for r in staged_records:
+        db.refresh(r)
+    return staged_records
+
+
+def bulk_insert_demat_accounts(db: Session, items: list[schemas.DematAccountCreate]) -> list[DematAccount]:
+    entity_type = schemas.EntityType.DEMAT_ACCOUNT
+    table_name = schemas.ENTITY_TYPE_TO_TABLE[entity_type]
+
+    names = [f"{i.name}-{i.account_number[-4:] if len(i.account_number) >= 4 else i.account_number}" for i in items]
+    registries = _bulk_create_base_registries(db, names, entity_type, table_name)
+
+    staged_records = []
+    for idx, item in enumerate(items):
+        record = DematAccount(
+            uuid=registries[idx].uuid,
+            name=item.name,
+            account_number=item.account_number,
+            depository_participant=item.depository_participant,
+            dp_id=item.dp_id,
+        )
+        staged_records.append(record)
+        db.add(record)
+
+    db.commit()
+    for r in staged_records:
+        db.refresh(r)
+    return staged_records
+
+
+def bulk_insert_fixed_deposits(db: Session, items: list[schemas.FixedDepositCreate]) -> list[FixedDeposit]:
+    entity_type = schemas.EntityType.FIXED_DEPOSIT_ACCOUNT
+    table_name = schemas.ENTITY_TYPE_TO_TABLE[entity_type]
+
+    names = [f"{i.bank_name}-{i.fd_identifier[-4:] if len(i.fd_identifier) >= 4 else i.fd_identifier}" for i in items]
+    registries = _bulk_create_base_registries(db, names, entity_type, table_name)
+
+    staged_records = []
+    for idx, item in enumerate(items):
+        record = FixedDeposit(
+            uuid=registries[idx].uuid,
+            bank_name=item.bank_name,
+            fd_identifier=item.fd_identifier,
+            interest_rate=item.interest_rate,
+            maturity_date=item.maturity_date,
+            principal_amount=item.principal_amount,
+        )
+        staged_records.append(record)
+        db.add(record)
+
+    db.commit()
+    for r in staged_records:
+        db.refresh(r)
+    return staged_records
+
+
+def bulk_insert_mutual_funds(db: Session, items: list[schemas.MutualFundCreate]) -> list[MutualFund]:
+    entity_type = schemas.EntityType.MUTUAL_FUND
+    table_name = schemas.ENTITY_TYPE_TO_TABLE[entity_type]
+
+    names = [i.name for i in items]
+    registries = _bulk_create_base_registries(db, names, entity_type, table_name)
+
+    staged_records = []
+    for idx, item in enumerate(items):
+        record = MutualFund(uuid=registries[idx].uuid, name=item.name, type=item.type)
+        staged_records.append(record)
+        db.add(record)
+
+    db.commit()
+    for r in staged_records:
+        db.refresh(r)
+    return staged_records
+
+
+def bulk_insert_stocks(db: Session, items: list[schemas.StockCreate]) -> list[Stock]:
+    entity_type = schemas.EntityType.STOCKS
+    table_name = schemas.ENTITY_TYPE_TO_TABLE[entity_type]
+
+    names = [f"{i.name}-{i.symbol}" for i in items]
+    registries = _bulk_create_base_registries(db, names, entity_type, table_name)
+
+    staged_records = []
+    for idx, item in enumerate(items):
+        record = Stock(uuid=registries[idx].uuid, name=item.name, symbol=item.symbol)
+        staged_records.append(record)
+        db.add(record)
+
+    db.commit()
+    for r in staged_records:
+        db.refresh(r)
+    return staged_records
+
+
+def bulk_insert_external_contacts(db: Session, items: list[schemas.ExternalContactCreate]) -> list[ExternalContact]:
+    staged_records = []
+    staged_names = []
+
+    # Process types dynamically because this endpoint manages both Person and Company types
+    for item in items:
+        entity_type = schemas.EntityType.PERSON if not item.is_institution else schemas.EntityType.COMPANY
+        table_name = schemas.ENTITY_TYPE_TO_TABLE[entity_type]
+        suffix = item.mobile_number[-4:] if item.mobile_number else "XXX-XXX-XXXX"
+        registry_name = f"{item.name}-{suffix}"
+
+        reg_entry = EntityRegistry(name=registry_name, entity_type=entity_type, table_name=table_name)
+        db.add(reg_entry)
+        staged_names.append(reg_entry)
+
+    try:
+        db.flush()
+    except IntegrityError as e:
+        db.rollback()
+        raise EntityAlreadyExistsError("A contact index collision was triggered across parent registry bounds.") from e
+
+    for idx, item in enumerate(items):
+        record = ExternalContact(
+            uuid=staged_names[idx].uuid,
+            name=item.name,
+            description=item.description,
+            is_institution=item.is_institution,
+            mobile_number=item.mobile_number,
+            tags=item.tags,
+        )
+        staged_records.append(record)
+        db.add(record)
+
+    db.commit()
+    for r in staged_records:
+        db.refresh(r)
+    return staged_records
+
+
+def bulk_insert_virtual_entities(db: Session, items: list[schemas.VirtualEntityCreate]) -> list[VirtualEntity]:
+    entity_type = schemas.EntityType.VIRTUAL_ENTITY
+    table_name = schemas.ENTITY_TYPE_TO_TABLE[entity_type]
+
+    names = [i.name for i in items]
+    registries = _bulk_create_base_registries(db, names, entity_type, table_name)
+
+    staged_records = []
+    for idx, item in enumerate(items):
+        record = VirtualEntity(uuid=registries[idx].uuid, name=item.name, description=item.description)
+        staged_records.append(record)
+        db.add(record)
+
+    db.commit()
+    for r in staged_records:
+        db.refresh(r)
+    return staged_records

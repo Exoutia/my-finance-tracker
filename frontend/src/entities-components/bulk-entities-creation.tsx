@@ -1,3 +1,4 @@
+// bulkcreate.tsx
 import React, { useState } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,10 +11,17 @@ import {
   UploadCloud,
 } from "lucide-react";
 
-// 1. Pull your central registry and API method out of service.ts
 import {
   ApiError,
+  bulkCreateBonds,
+  bulkCreateCreditCard,
+  bulkCreateDematAccounts,
+  bulkCreateExternalContacts,
+  bulkCreateFixedDeposits,
   bulkCreateLiquidAccounts,
+  bulkCreateMutualFunds,
+  bulkCreateStocks,
+  bulkCreateVirtualEntities,
   ENTITY_BLUEPRINT_REGISTRY,
 } from "@/src/service.ts";
 
@@ -28,43 +36,73 @@ import {
 import { Button } from "@/components/ui/button.tsx";
 import { Label } from "@/components/ui/label.tsx";
 
-export default function BulkUploadLiquidAccounts() {
+export default function BulkCreate() {
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Default to the first available entity configuration inside your registry structure map
+  const [selectedEntityType, setSelectedEntityType] = useState<string>(
+    Object.keys(ENTITY_BLUEPRINT_REGISTRY)[0],
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // 2. CONFIGURE TANSTACK MUTATION TO TRIGGER YOUR SERVICE PIPELINE
-  const uploadMutation = useMutation({
-    mutationFn: (payload: FormData) => bulkCreateLiquidAccounts(payload),
-    onSuccess: () => {
-      // Clear local states on validation success
+  // CONFIGURE TANSTACK MUTATION WITH DYNAMIC PIPELINE SWITCHING
+  const uploadMutation = useMutation<unknown[], ApiError, FormData>({
+    mutationFn: (payload: FormData) => {
+      switch (selectedEntityType) {
+        case "liquid_account":
+          return bulkCreateLiquidAccounts(payload);
+        case "credit_card":
+          return bulkCreateCreditCard(payload);
+        case "bonds":
+          return bulkCreateBonds(payload);
+        case "demat_account":
+          return bulkCreateDematAccounts(payload);
+        case "fixed_deposit_account":
+          return bulkCreateFixedDeposits(payload);
+        case "mutual_fund":
+          return bulkCreateMutualFunds(payload);
+        case "stocks":
+          return bulkCreateStocks(payload);
+        case "person":
+        case "company":
+          return bulkCreateExternalContacts(payload); // Maps both target categories to external contacts
+        case "virtual_entity":
+          return bulkCreateVirtualEntities(payload);
+      }
+    },
+    onSuccess: (_data) => {
       setSelectedFile(null);
       setErrorMessage(null);
 
-      // Invalidate existing caches so your Entities Table fetches fresh data automatically
       queryClient.invalidateQueries({ queryKey: ["entities"] });
 
-      alert("Bulk ingestion completed successfully!");
-      router.navigate({ to: "/entities" }); // Redirect back to principal tracking ledger
+      alert(`Bulk ingestion for ${selectedEntityType} completed successfully!`);
+      router.navigate({ to: "/entities" });
     },
     onError: (error: ApiError) => {
-      // Cleanly intercept and display explicit error details parsed by apiRequest
       setErrorMessage(
         error.message ||
           "Bulk creation aborted due to transaction boundary failure.",
       );
     },
   });
-
-  // 3. GENERATE HARDFIXED BLOB CSV TEMPLATE SKELETON
+  // GENERATE DYNAMIC BLOB CSV TEMPLATE BASED ON SELECTION
   const handleDownloadTemplate = () => {
-    const schemaFields = ENTITY_BLUEPRINT_REGISTRY["liquid_account"];
+    const schemaFields = ENTITY_BLUEPRINT_REGISTRY[selectedEntityType];
+    if (!schemaFields) return;
+
     const headers = Object.keys(schemaFields);
 
-    // Add an obvious structural baseline reference string row for the user
+    // Dynamic mock values parsed straight via blueprints metadata properties parameters
     const formatMockRow = headers.map((key) => {
-      if (schemaFields[key].type === "number") return "2500.00";
+      const fieldType = schemaFields[key].type;
+      if (fieldType === "number") return "2500";
+      if (fieldType === "boolean") {
+        return schemaFields[key].desc.includes("true") ? "true" : "false";
+      }
+      if (fieldType === "date") return "2026-06-01";
       return `sample_${key}`;
     });
 
@@ -73,32 +111,30 @@ export default function BulkUploadLiquidAccounts() {
     const url = URL.createObjectURL(blob);
 
     const link = globalThis.document.createElement("a");
+    const cleanFileName = selectedEntityType.replace(/_/g, "-");
+
     link.href = url;
-    link.setAttribute("download", "bulk_template_liquid_accounts.csv");
+    link.setAttribute("download", `bulk_template_${cleanFileName}.csv`);
     globalThis.document.body.appendChild(link);
     link.click();
     globalThis.document.body.removeChild(link);
   };
 
-  // Capture file bytes from drop-zone target input field
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      setErrorMessage(null); // Reset layout error state tracker
+      setErrorMessage(null);
     }
   };
 
-  // 4. PACK UP BINARIES AND INVOKE SERVICE TRANSACTION
   const handleSubmitUpload = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) return;
 
-    // Instantiating standard multipart data payload matching your backend's File(...) expected header requirements
     const submissionPayload = new FormData();
     submissionPayload.append("file", selectedFile);
 
-    // Dispatch payload execution straight down the network pipe
     uploadMutation.mutate(submissionPayload);
   };
 
@@ -114,35 +150,63 @@ export default function BulkUploadLiquidAccounts() {
       </div>
 
       <form onSubmit={handleSubmitUpload}>
-        <Card className="border-border bg-secondary-background shadow-shadow w-full">
-          <CardHeader className="border-b border-border/40 pb-4">
+        <Card className="border-border bg-secondary-background shadow-shadow w-full border-2">
+          <CardHeader className="border-b-2 border-border pb-4">
             <CardTitle className="text-xl font-heading">
-              Bulk Liquid Ingestion
+              Bulk Entity Ingestion
             </CardTitle>
             <CardDescription className="text-xs opacity-80">
-              Upload multiple liquid checking/savings structures concurrently
-              directly into your ledger network registry.
+              Select an asset framework layout topology type from the
+              configuration mapping system layer to load target records data
+              entries.
             </CardDescription>
           </CardHeader>
 
           <CardContent className="pt-5 flex flex-col gap-5">
-            {/* Download Step Card Action */}
+            {/* Step 1: Select Type */}
             <div className="grid w-full gap-2">
-              <Label>1. Fetch Mapping Architecture Layout</Label>
+              <Label htmlFor="entity-type-selector">
+                1. Choose Target Registry Type
+              </Label>
+              <select
+                id="entity-type-selector"
+                value={selectedEntityType}
+                onChange={(e) => {
+                  setSelectedEntityType(e.target.value);
+                  setSelectedFile(null); // Clear mismatched uploaded structural assets sheets
+                }}
+                className="w-full rounded-base border-2 border-border bg-background p-2.5 text-xs font-heading uppercase tracking-wide shadow-shadow focus:outline-none transition-transform"
+              >
+                {Object.keys(ENTITY_BLUEPRINT_REGISTRY).map((key) => (
+                  <option
+                    key={key}
+                    value={key}
+                    className="bg-secondary-background text-foreground normal-case"
+                  >
+                    {key.replace(/_/g, " ")}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Step 2: Download Structuring Grid Schema */}
+            <div className="grid w-full gap-2">
+              <Label>2. Fetch Mapping Architecture Layout</Label>
               <Button
                 type="button"
                 onClick={handleDownloadTemplate}
                 variant="neutral"
-                className="w-full flex items-center justify-center gap-2 bg-background hover:bg-muted text-xs font-heading uppercase tracking-wide border-border shadow-none"
+                className="w-full flex items-center justify-center gap-2 bg-background hover:bg-muted text-xs font-heading uppercase tracking-wide border-2 border-border shadow-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
               >
-                <Download className="h-4 w-4" /> Download Blueprint CSV
+                <Download className="h-4 w-4" /> Download{" "}
+                {selectedEntityType.replace(/_/g, " ")} CSV
               </Button>
             </div>
 
-            {/* Binary File Receiver Area Dropzone */}
+            {/* Step 3: Binary Upload Drag-Dropzone */}
             <div className="grid w-full gap-2">
               <Label htmlFor="csv-file-injector">
-                2. Upload Populated Dataset Sheet
+                3. Upload Populated Dataset Sheet
               </Label>
               <div className="relative flex flex-col items-center justify-center border-2 border-dashed border-border bg-background/50 hover:bg-background rounded-base p-8 text-center transition-colors">
                 <input
@@ -157,8 +221,9 @@ export default function BulkUploadLiquidAccounts() {
                 {selectedFile
                   ? (
                     <div className="flex flex-col items-center gap-1">
-                      <p className="text-xs font-heading uppercase tracking-wide text-main flex items-center gap-1.5">
-                        <CheckCircle className="h-4 w-4 text-chart-1" />{" "}
+                      <p className="text-xs font-heading uppercase tracking-wide text-foreground flex items-center gap-1.5">
+                        <CheckCircle className="h-4 w-4 text-[var(--chart-1)]" />
+                        {" "}
                         {selectedFile.name}
                       </p>
                       <p className="text-[10px] opacity-60">
@@ -180,25 +245,25 @@ export default function BulkUploadLiquidAccounts() {
               </div>
             </div>
 
-            {/* Error Message Trace Block Layout */}
+            {/* System Error Trace Alert Block Panel */}
             {errorMessage && (
-              <div className="flex items-start gap-2.5 p-3 rounded-base bg-chart-3/10 border border-chart-3/30 text-chart-3 text-xs leading-relaxed font-mono">
+              <div className="flex items-start gap-2.5 p-3 rounded-base bg-red-500/10 border-2 border-border text-[var(--chart-4)] text-xs leading-relaxed font-mono shadow-shadow">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <div>{errorMessage}</div>
               </div>
             )}
           </CardContent>
 
-          {/* Mutation Submit Confirmation Panel */}
-          <CardFooter className="border-t border-border/40 pt-4 bg-background/30 flex justify-end">
+          {/* Action Submission Execution Bar Footer Panel */}
+          <CardFooter className="border-t-2 border-border pt-4 bg-background/30 flex justify-end">
             <Button
               type="submit"
               disabled={!selectedFile || uploadMutation.isPending}
-              className={`w-full sm:w-1/3 font-heading uppercase text-xs tracking-wider transition-all
+              className={`w-full sm:w-1/3 font-heading uppercase text-xs tracking-wider transition-all border-2 border-border
                 ${
                 selectedFile && !uploadMutation.isPending
-                  ? "bg-main text-main-foreground shadow-shadow hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
-                  : "opacity-40 cursor-not-allowed"
+                  ? "bg-main text-main-foreground shadow-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+                  : "opacity-40 cursor-not-allowed shadow-none"
               }
               `}
             >
