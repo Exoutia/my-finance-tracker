@@ -25,13 +25,16 @@ import {
 /**
  * Reusable mutation side-effects handler to eliminate 50 lines of duplicate garbage.
  */
-const useMutationOptions = (entityName: string) => {
+const useMutationOptions = (
+  entityName: string,
+  invalidateQueryKeys: string[],
+) => {
   const queryClient = useQueryClient();
 
   return {
     onSuccess: (data: unknown) => {
       console.log(`Successfully created ${entityName}:`, data);
-      queryClient.invalidateQueries({ queryKey: ["entities"] });
+      queryClient.invalidateQueries({ queryKey: invalidateQueryKeys });
     },
     onError: (error: Error) => {
       console.error(`Mutation failed for ${entityName}:`, error.message);
@@ -40,7 +43,7 @@ const useMutationOptions = (entityName: string) => {
 };
 
 export function useCreateLiquidAccount() {
-  const options = useMutationOptions("liquid account");
+  const options = useMutationOptions("liquid account", ["entities"]);
   return useMutation({
     mutationFn: async (data: LiquidAccountCreate) => {
       const result = await createLiquidAccount(data);
@@ -52,7 +55,7 @@ export function useCreateLiquidAccount() {
 }
 
 export function useCreateCreditCard() {
-  const options = useMutationOptions("credit card");
+  const options = useMutationOptions("credit card", ["entities"]);
   return useMutation({
     mutationFn: async (data: CreditCardCreate) => {
       const result = await createCreditCardEntity(data);
@@ -64,7 +67,7 @@ export function useCreateCreditCard() {
 }
 
 export function useCreateBond() {
-  const options = useMutationOptions("bond");
+  const options = useMutationOptions("bond", ["entities"]);
   return useMutation({
     mutationFn: async (data: BondCreate) => {
       const result = await createBondEntity(data);
@@ -76,7 +79,7 @@ export function useCreateBond() {
 }
 
 export function useCreateExternalContact() {
-  const options = useMutationOptions("external contact");
+  const options = useMutationOptions("external contact", ["entities"]);
   return useMutation({
     mutationFn: async (data: ExternalContactCreate) => {
       const result = await createExternalContactEntity(data);
@@ -94,7 +97,7 @@ export function useCreateExternalContact() {
 }
 
 export function useCreateDematAccount() {
-  const options = useMutationOptions("demat account");
+  const options = useMutationOptions("demat account", ["entities"]);
   return useMutation({
     mutationFn: async (data: DematAccountCreate) => {
       const result = await createDematAccount(data);
@@ -106,7 +109,7 @@ export function useCreateDematAccount() {
 }
 
 export function useCreateFixedDeposit() {
-  const options = useMutationOptions("fixed deposit");
+  const options = useMutationOptions("fixed deposit", ["entities"]);
   return useMutation({
     mutationFn: async (data: FixedDepositCreate) => {
       const result = await createFixedDeposit(data);
@@ -118,7 +121,7 @@ export function useCreateFixedDeposit() {
 }
 
 export function useCreateMutualFund() {
-  const options = useMutationOptions("mutual fund");
+  const options = useMutationOptions("mutual fund", ["entities"]);
   return useMutation({
     mutationFn: async (data: MutualFundCreate) => {
       const result = await createMutualFund(data);
@@ -130,7 +133,7 @@ export function useCreateMutualFund() {
 }
 
 export function useCreateVirtualEntity() {
-  const options = useMutationOptions("virtual entity");
+  const options = useMutationOptions("virtual entity", ["entities"]);
   return useMutation({
     mutationFn: async (data: VirtualEntityCreate) => {
       const result = await createVirtualEntity(data);
@@ -142,7 +145,7 @@ export function useCreateVirtualEntity() {
 }
 
 export function useCreateStock() {
-  const options = useMutationOptions("stock");
+  const options = useMutationOptions("stock", ["entities"]);
   return useMutation({
     mutationFn: async (data: StockCreate) => {
       const result = await createStock(data);
@@ -154,7 +157,7 @@ export function useCreateStock() {
 }
 
 export function useCreateTransaction() {
-  const options = useMutationOptions("transaction");
+  const options = useMutationOptions("transaction", ["transactions"]);
   return useMutation({
     mutationFn: async (data: TransactionCreate) => {
       const result = await createTransaction(data);

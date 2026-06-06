@@ -1,32 +1,30 @@
 import React from "react";
-import { Button } from "@/components/ui/button.tsx";
 import * as z from "zod";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
-import { useCreateTransaction } from "@/src/stores/createEntityHooks.ts";
 
-// 1. Runtime Zod Schema mapping directly against your TransactionCreate structure
+// Mocking an entity fetch function—replace this with your real service layer API call
+import { type Entity, getAllEntitiesAtOnce } from "@/src/service.ts";
+import { useCreateTransaction } from "@/src/stores/createEntityHooks.ts";
+import type { AutocompleteOption } from "@/components/autocomplete.tsx";
+import Autocomplete from "@/components/autocomplete.tsx";
+
 const transactionFormSchema = z.object({
   from_entities_id: z.string().uuid({
-    message: "Invalid source account ID format",
+    message: "Please select a valid source account",
   }),
   to_entities_id: z.string().uuid({
-    message: "Invalid destination account ID format",
+    message: "Please select a valid destination account",
   }),
-  amount: z.coerce.number().gt(0, {
-    message: "Amount must be a positive currency number",
-  }),
-  description: z.preprocess(
-    (val) => (val === "" ? null : val),
-    z.string().nullable(),
-  ),
+  amount: z.coerce.number().gt(0, { message: "Amount must be greater than 0" }),
+  description: z.string().nullable().default(null),
   transaction_datetime: z.string().min(1, {
-    message: "Timestamp tracking is required",
+    message: "Date and time tracking is required",
   }),
-  tags: z.string().transform((val) =>
-    val ? val.split(",").map((t) => t.trim()).filter(Boolean) : []
-  ),
+  tags: z.array(z.string()).default([]),
 }).refine((data) => data.from_entities_id !== data.to_entities_id, {
-  message: "Source and Destination entities cannot be the same.",
+  message: "Source and Destination entities cannot be identical.",
   path: ["to_entities_id"],
 });
 
@@ -38,45 +36,74 @@ export default function CreateTransactionForm(
   { onSuccess }: { onSuccess?: () => void },
 ) {
   const mutation = useCreateTransaction();
+
+  // 1. Fetch live registries from your database to populate selection parameters
+  const entitiesQuery = useQuery({
+    queryKey: ["entities-registry"],
+    queryFn: getAllEntitiesAtOnce,
+  });
+
+  // Explicit form state bindings for Autocomplete tracking parameters
+  const [fromEntityId, setFromEntityId] = React.useState<string | null>(null);
+  const [toEntityId, setToEntityId] = React.useState<string | null>(null);
   const [errors, setErrors] = React.useState<FormErrors>({});
+  const [clearForm, setClearForm] = React.useState<boolean>(false);
+
+  const autocompleteOptions: AutocompleteOption[] = React.useMemo(() => {
+    if (!entitiesQuery.data) return [];
+
+    const rawData = Array.isArray(entitiesQuery.data)
+      ? entitiesQuery.data
+      : Object.values(entitiesQuery.data);
+
+    return (rawData as Entity[]).map((ent: Entity) => ({
+      label: ent.name,
+      value: ent.uuid,
+    }));
+  }, [entitiesQuery.data]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrors({});
 
     const formData = new FormData(e.currentTarget);
+    const rawTags = formData.get("tags") as string;
+
     const rawPayload = {
-      from_entities_id: formData.get("from_entities_id"),
-      to_entities_id: formData.get("to_entities_id"),
+      from_entities_id: fromEntityId,
+      to_entities_id: toEntityId,
       amount: formData.get("amount"),
-      description: formData.get("description"),
+      description: formData.get("description") || null,
       transaction_datetime: formData.get("transaction_datetime"),
-      tags: formData.get("tags"),
+      tags: rawTags
+        ? rawTags.split(",").map((t) => t.trim()).filter(Boolean)
+        : [],
     };
 
-    // 2. Perform Form Validation via Zod
     const validationResult = transactionFormSchema.safeParse(rawPayload);
 
     if (!validationResult.success) {
       const fieldErrors: FormErrors = {};
-      validationResult.error.issues.forEach((err) => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0] as keyof FormErrors] = err.message;
+      validationResult.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          fieldErrors[issue.path[0] as keyof FormErrors] = issue.message;
         }
       });
       setErrors(fieldErrors);
+      setClearForm((prev) => !prev);
       return;
     }
 
-    // 3. Trigger Mutation on valid verification
     mutation.mutate(validationResult.data, {
       onSuccess: () => {
         (e.target as HTMLFormElement).reset();
+        setFromEntityId(null);
+        setToEntityId(null);
         if (onSuccess) onSuccess();
       },
       onError: (err) => {
         setErrors({
-          root: err.message || "An error occurred on the data server.",
+          root: err.message || "An issue occurred on the backend database.",
         });
       },
     });
@@ -97,41 +124,35 @@ export default function CreateTransactionForm(
         </div>
       )}
 
-      {/* From Account Input Field */}
+      {/* From Autocomplete Picker Field */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-          From Entity (UUID)
+          From Account
         </label>
-        <Input
-          name="from_entities_id"
-          placeholder="a8743d2b-0f97-44a3-89ee-90ab37c9ff08"
-          className="shadow-none"
+        <Autocomplete
+          options={autocompleteOptions}
+          placeholder="Search source registry..."
+          onSelect={(value) => setFromEntityId(value)}
+          error={errors.from_entities_id}
+          resetToggle={clearForm}
         />
-        {errors.from_entities_id && (
-          <span className="text-xs text-destructive">
-            {errors.from_entities_id}
-          </span>
-        )}
       </div>
 
-      {/* To Account Input Field */}
+      {/* To Autocomplete Picker Field */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-          To Entity (UUID)
+          To Account
         </label>
-        <Input
-          name="to_entities_id"
-          placeholder="85318669-7a8d-4c55-a340-78de624116ab"
-          className="shadow-none"
+        <Autocomplete
+          options={autocompleteOptions}
+          placeholder="Search target registry..."
+          onSelect={(value) => setToEntityId(value)}
+          error={errors.to_entities_id}
+          resetToggle={clearForm}
         />
-        {errors.to_entities_id && (
-          <span className="text-xs text-destructive">
-            {errors.to_entities_id}
-          </span>
-        )}
       </div>
 
-      {/* Amount Input Field */}
+      {/* Amount Input */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-heading uppercase tracking-wider opacity-80">
           Amount
@@ -148,10 +169,10 @@ export default function CreateTransactionForm(
         )}
       </div>
 
-      {/* Datetime Selection Field */}
+      {/* DateTime Input */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-          Transaction Date & Time
+          Date & Time
         </label>
         <Input
           name="transaction_datetime"
@@ -166,38 +187,39 @@ export default function CreateTransactionForm(
         )}
       </div>
 
-      {/* Description Field */}
+      {/* Memo Field */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-heading uppercase tracking-wider opacity-80">
           Description
         </label>
         <Input
           name="description"
-          placeholder="Optional memo..."
+          placeholder="Optional notes..."
           className="shadow-none"
         />
       </div>
 
-      {/* Comma-Separated Tags Input Field */}
+      {/* Tags Input */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-heading uppercase tracking-wider opacity-80">
           Tags (Comma Separated)
         </label>
         <Input
           name="tags"
-          placeholder="closingAccount, infrastructure, primary"
+          placeholder="closingAccount, dividend, corporate"
           className="shadow-none"
         />
       </div>
 
-      {/* Submit button dynamically bound to React Mutation State hooks */}
       <Button
         type="submit"
         variant="neutral"
         disabled={mutation.isPending}
         className="mt-2 w-full h-10 font-heading cursor-pointer"
       >
-        {mutation.isPending ? "Processing Request..." : "Post Transaction"}
+        {mutation.isPending
+          ? "Executing payload processing..."
+          : "Submit Transaction"}
       </Button>
     </form>
   );
