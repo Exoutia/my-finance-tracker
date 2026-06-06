@@ -9,6 +9,7 @@ import {
   createLiquidAccount,
   createMutualFund,
   createStock,
+  createTransaction,
   createVirtualEntity,
   type CreditCardCreate,
   type DematAccountCreate,
@@ -17,6 +18,7 @@ import {
   type LiquidAccountCreate,
   type MutualFundCreate,
   type StockCreate,
+  type TransactionCreate,
   type VirtualEntityCreate,
 } from "@/src/service.ts";
 
@@ -145,6 +147,18 @@ export function useCreateStock() {
     mutationFn: async (data: StockCreate) => {
       const result = await createStock(data);
       if (!result) throw new Error("Failed to create stock asset");
+      return result;
+    },
+    ...options,
+  });
+}
+
+export function useCreateTransaction() {
+  const options = useMutationOptions("transaction");
+  return useMutation({
+    mutationFn: async (data: TransactionCreate) => {
+      const result = await createTransaction(data);
+      if (!result) throw new Error("failed to create transaction");
       return result;
     },
     ...options,

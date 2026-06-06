@@ -1,10 +1,10 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum, auto, unique
-from typing import Generic, List, Literal, Optional, Type, TypeVar, Union
+from typing import Generic, List, Literal, Optional, TypeVar
 from uuid import UUID
 
-from models import EntityType, MutualFundType, TransactionType
+from models import EntityType, MutualFundType
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
 
@@ -39,103 +39,6 @@ ENTITY_TYPE_TO_TABLE: dict[EntityType, TableName] = {
     EntityType.VIRTUAL_ENTITY: "virtual_entities",
 }
 
-
-@unique
-class ProvisionCategory(StrEnum):
-    OTHER = auto()
-
-
-@unique
-class LendingCategory(StrEnum):
-    PERSON = auto()
-    COMPANY = auto()
-
-
-@unique
-class LoanCategory(StrEnum):
-    PERSON = auto()
-    COMPANY = auto()
-
-
-@unique
-class IncomeCategory(StrEnum):
-    SALARY = auto()
-    INTEREST = auto()
-    DIVIDEND = auto()
-    OTHER = auto()
-
-
-@unique
-class ExpenseCategory(StrEnum):
-    RENT = auto()
-    INSURANCE = auto()
-    TRAVEL = auto()
-    CHARITY = auto()
-    FOOD = auto()
-    BILL = auto()
-    OTHER = auto()
-
-
-@unique
-class InvestmentCategory(StrEnum):
-    BONDS = auto()
-    MUTUAL_FUNDS = auto()
-    FIXED_DEPOSIT = auto()
-    STOCKS = auto()
-    ASSET = auto()
-    OTHER = auto()
-
-
-@unique
-class LendingRepaymentCategory(StrEnum):
-    LOAN_INTEREST = auto()
-    LOAN_REPAYMENT = auto()
-    FULL_PAYMENT = auto()
-    PART_PAYMENT = auto()
-    OTHER = auto()
-
-
-@unique
-class LoanRepaymentCategory(StrEnum):
-    LOAN_INTEREST = auto()
-    LOAN_REPAYMENT = auto()
-    FULL_PAYMENT = auto()
-    PART_PAYMENT = auto()
-    OTHER = auto()
-
-
-@unique
-class CreditCardExpenseCategory(StrEnum):
-    RENT = auto()
-    INSURANCE = auto()
-    TRAVEL = auto()
-    CHARITY = auto()
-    FOOD = auto()
-    BILL = auto()
-    OTHER = auto()
-
-
-@unique
-class CreditCardRepaymentCategory(StrEnum):
-    FULL_PAYMENT = auto()
-    PART_PAYMENT = auto()
-    INTEREST_PAYMENT = auto()
-    OTHER = auto()
-
-
-TransactionCategory = Union[
-    IncomeCategory,
-    ExpenseCategory,
-    InvestmentCategory,
-    LendingCategory,
-    LoanCategory,
-    LendingRepaymentCategory,
-    LoanRepaymentCategory,
-    CreditCardExpenseCategory,
-    CreditCardRepaymentCategory,
-    TransferCategory,
-    ProvisionCategory,
-]
 
 T = TypeVar("T")
 
@@ -206,8 +109,8 @@ class CreditCardCreate(CreditCardBase):
     @classmethod
     def validate_card_number(cls, v: str) -> str:
         # Basic validation: ensure it's numeric and at least 4 digits
-        if not v.isdigit() or len(v) < 4:
-            raise ValueError("Card number must be numeric and at least 4 digits long")
+        if not v.replace("x", "").isdigit() or len(v) < 4:
+            raise ValueError("Card number must be numeric and at least 4 digits long can include x for masking")
         return v
 
 
@@ -324,7 +227,7 @@ class ExternalContactBase(BaseModel):
     @field_validator("mobile_number")
     @classmethod
     def validate_phone(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and not v.replace("+", "").isdigit():
+        if v is not None and not v.replace("x", "").isdigit():
             raise ValueError("Mobile number must be numeric (can include '+')")
         return v
 
@@ -413,87 +316,36 @@ class StockTransactionInfoRead(StockTransactionInfoBase):
         from_attributes = True
 
 
-CategoryClass = Type[
-    Union[
-        IncomeCategory,
-        ExpenseCategory,
-        InvestmentCategory,
-        LendingCategory,
-        LoanCategory,
-        LendingRepaymentCategory,
-        LoanRepaymentCategory,
-        CreditCardExpenseCategory,
-        CreditCardRepaymentCategory,
-        TransferCategory,
-        ProvisionCategory,
-    ]
-]
-
-TYPE_TO_ENUM: dict[TransactionType, CategoryClass] = {
-    TransactionType.INCOME: IncomeCategory,
-    TransactionType.EXPENSE: ExpenseCategory,
-    TransactionType.INVESTMENT: InvestmentCategory,
-    TransactionType.LENDING: LendingCategory,
-    TransactionType.LOAN: LoanCategory,
-    TransactionType.LENDING_REPAYMENT: LendingRepaymentCategory,
-    TransactionType.LOAN_REPAYMENT: LoanRepaymentCategory,
-    TransactionType.CREDIT_CARD_LENDING: CreditCardExpenseCategory,
-    TransactionType.CREDIT_CARD_REPAYMENT: CreditCardRepaymentCategory,
-    TransactionType.TRANSFER: TransferCategory,
-    TransactionType.PROVISION: ProvisionCategory,
-}
-
-
-def get_category_enum(tx_type: TransactionType) -> Type[Union[...]]:
-    """Helper to fetch the correct Enum class based on transaction type."""
-    enum_cls = TYPE_TO_ENUM.get(tx_type)
-    if not enum_cls:
-        raise ValueError(f"'{tx_type}' is not a registered transaction type.")
-    return enum_cls
-
-
 class TransactionBase(BaseModel):
     to_entities_id: UUID
     from_entities_id: UUID
     amount: Decimal = Field(gt=0)
-    transaction_type: TransactionType
     description: Optional[str] = None
     transaction_datetime: datetime = Field(default_factory=datetime.now)
 
 
 class TransactionCreate(TransactionBase):
-    category: str = Field(..., description="The sub-category string (e.g., 'groceries')")
-    transaction_category: Optional[TransactionCategory] = Field(default=None, exclude=True)
+    tags: List[str] = Field(default=[])
 
     @model_validator(mode="after")
     def validate_and_map_category(self) -> "TransactionCreate":
         if self.to_entities_id == self.from_entities_id:
             raise ValueError("Source and Destination entities cannot be the same.")
 
-        enum_class = get_category_enum(self.transaction_type)
-        try:
-            self.transaction_category = enum_class(self.category.lower())
-        except ValueError as e:
-            allowed = [member.value for member in enum_class]
-            raise ValueError(
-                f"Invalid category '{self.category}' for '{self.transaction_type}'. Must be one of: {allowed}"
-            ) from e
         return self
 
 
 class TransactionRead(TransactionBase):
     uuid: UUID
-    transaction_category: str
     tags: List[TagRead] = []
-
-    @field_validator("transaction_category", mode="before")
-    @classmethod
-    def format_category(cls, v) -> str:
-        # If the DB has the Enum, return the value (string)
-        return v.value if hasattr(v, "value") else str(v)
 
     class Config:
         from_attributes = True
+
+
+class TransactionWithNameRead(TransactionRead):
+    to_entity: EntityRegistryRead
+    from_entity: EntityRegistryRead
 
 
 class EntityLiquidResponse(BaseModel):

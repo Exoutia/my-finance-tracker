@@ -1,6 +1,7 @@
 {
   "imports": {
-    "@/": "./"
+    "@/": "./",
+    "@zod/zod": "jsr:@zod/zod@^4.4.3"
   },
   "fmt": {
     "exclude": [

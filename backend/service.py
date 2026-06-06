@@ -12,6 +12,7 @@ from models import (
     LiquidAccount,
     MutualFund,
     Stock,
+    Tag,
     Transaction,
     VirtualEntity,
 )
@@ -54,12 +55,35 @@ def both_entities_are_active(db: Session, to_id: UUID, from_id: UUID) -> bool:
 def create_transaction(db: Session, transaction_data: schemas.TransactionCreate):
     if not both_entities_are_active(db, transaction_data.to_entities_id, transaction_data.from_entities_id):
         raise EntityValidationError("Transaction rejected: Both target entities must be valid and active.")
+
     try:
-        new_transaction = Transaction.model_validate(transaction_data.model_dump())
+        transaction_dict = transaction_data.model_dump(exclude={"tags"})
+        new_transaction = Transaction.model_validate(transaction_dict)
+
+        processed_tags = []
+        for tag_name in transaction_data.tags:
+            normalized_name = tag_name.strip().lower()
+            if not normalized_name:
+                continue
+
+            existing_tag = db.exec(select(Tag).where(func.lower(Tag.name) == normalized_name)).first()
+
+            if existing_tag:
+                processed_tags.append(existing_tag)
+            else:
+                new_tag = Tag(name=tag_name.strip())
+                db.add(new_tag)
+                db.flush()
+                processed_tags.append(new_tag)
+
+        new_transaction.tags = processed_tags
+
         db.add(new_transaction)
         db.commit()
         db.refresh(new_transaction)
+
         return new_transaction
+
     except Exception as e:
         db.rollback()
         raise DBException from e
@@ -73,15 +97,12 @@ def get_all_transactions(offset: int, limit: int, db: Session):
         raise DBException(e) from e
 
 
-def get_transaction_types_to_categories():
+def get_all_transactions_without_limit(db: Session):
     try:
-        data = {
-            transaction_type.value: [category.value for category in category_enum]
-            for transaction_type, category_enum in schemas.TYPE_TO_ENUM.items()
-        }
+        data = db.exec(select(Transaction).where(Transaction.active)).all()
         return data
     except Exception as e:
-        raise ServiceException(e) from e
+        raise DBException(e) from e
 
 
 def _create_entity(db: Session, entity_create_data: schemas.EntityRegistryCreate) -> EntityRegistry:

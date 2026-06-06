@@ -36,7 +36,7 @@ import {
 import { Button } from "@/components/ui/button.tsx";
 import { Label } from "@/components/ui/label.tsx";
 
-export default function BulkCreate() {
+export default function EntitiesBulkCreate() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -70,6 +70,8 @@ export default function BulkCreate() {
           return bulkCreateExternalContacts(payload); // Maps both target categories to external contacts
         case "virtual_entity":
           return bulkCreateVirtualEntities(payload);
+        default:
+          throw new Error(`Unhandled entity type: ${selectedEntityType}`);
       }
     },
     onSuccess: (_data) => {
@@ -196,7 +198,7 @@ export default function BulkCreate() {
                 type="button"
                 onClick={handleDownloadTemplate}
                 variant="neutral"
-                className="w-full flex items-center justify-center gap-2 bg-background hover:bg-muted text-xs font-heading uppercase tracking-wide border-2 border-border shadow-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
+                className="w-full flex items-center justify-center gap-2 bg-background hover:bg-muted text-xs font-heading uppercase tracking-wide border-2 border-border shadow-shadow hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
               >
                 <Download className="h-4 w-4" /> Download{" "}
                 {selectedEntityType.replace(/_/g, " ")} CSV
@@ -222,8 +224,7 @@ export default function BulkCreate() {
                   ? (
                     <div className="flex flex-col items-center gap-1">
                       <p className="text-xs font-heading uppercase tracking-wide text-foreground flex items-center gap-1.5">
-                        <CheckCircle className="h-4 w-4 text-[var(--chart-1)]" />
-                        {" "}
+                        <CheckCircle className="h-4 w-4 text-chart-1" />{" "}
                         {selectedFile.name}
                       </p>
                       <p className="text-[10px] opacity-60">
@@ -247,7 +248,7 @@ export default function BulkCreate() {
 
             {/* System Error Trace Alert Block Panel */}
             {errorMessage && (
-              <div className="flex items-start gap-2.5 p-3 rounded-base bg-red-500/10 border-2 border-border text-[var(--chart-4)] text-xs leading-relaxed font-mono shadow-shadow">
+              <div className="flex items-start gap-2.5 p-3 rounded-base bg-red-500/10 border-2 border-border text-chart-4 text-xs leading-relaxed font-mono shadow-shadow">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <div>{errorMessage}</div>
               </div>
@@ -262,7 +263,7 @@ export default function BulkCreate() {
               className={`w-full sm:w-1/3 font-heading uppercase text-xs tracking-wider transition-all border-2 border-border
                 ${
                 selectedFile && !uploadMutation.isPending
-                  ? "bg-main text-main-foreground shadow-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+                  ? "bg-main text-main-foreground shadow-shadow hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
                   : "opacity-40 cursor-not-allowed shadow-none"
               }
               `}

@@ -82,20 +82,21 @@ def get_all_transaction(session: SessionDep, offset: int = 0, limit: int = Query
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 
+@app.get("/transactions/all", response_model=list[schemas.TransactionWithNameRead])
+def get_all_transaction_without_limit(session: SessionDep):
+    try:
+        data = service.get_all_transactions_without_limit(session)
+        return data
+    except service.DBException as err:
+        raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
 @app.post("/transactions", response_model=schemas.TransactionRead)
 def create_transaction(session: SessionDep, data: schemas.TransactionCreate):
     try:
         data = service.create_transaction(session, data)
         return data
     except service.DBException as err:
-        raise HTTPException(status_code=500, detail="Internal data error") from err
-
-
-@app.get("/transaction/transaction-types-to-categories")
-def get_transaction_types_to_categories():
-    try:
-        return service.get_transaction_types_to_categories()
-    except Exception as err:
         raise HTTPException(status_code=500, detail="Internal data error") from err
 
 

@@ -9,21 +9,6 @@ from sqlmodel import Field, Relationship, SQLModel
 
 
 @unique
-class TransactionType(StrEnum):
-    TRANSFER = auto()
-    EXPENSE = auto()
-    INCOME = auto()
-    PROVISION = auto()
-    INVESTMENT = auto()
-    LENDING = auto()
-    LENDING_REPAYMENT = auto()
-    LOAN = auto()
-    LOAN_REPAYMENT = auto()
-    CREDIT_CARD_LENDING = auto()
-    CREDIT_CARD_REPAYMENT = auto()
-
-
-@unique
 class EntityType(StrEnum):
     LIQUID_ACCOUNT = auto()
     DEMAT_ACCOUNT = auto()
@@ -181,10 +166,13 @@ class Transaction(TimeStampMixin, SQLModel, table=True):
 
     transaction_datetime: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    transaction_type: TransactionType
-    transaction_category: str  # always store string
     tags: List[Tag] = Relationship(back_populates="transactions", link_model=TransactionTagLink)
     description: Optional[str] = None
+
+    from_entity: "EntityRegistry" = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[Transaction.from_entities_id]"}
+    )
+    to_entity: "EntityRegistry" = Relationship(sa_relationship_kwargs={"foreign_keys": "[Transaction.to_entities_id]"})
 
 
 class Stock(TimeStampMixin, SQLModel, table=True):
