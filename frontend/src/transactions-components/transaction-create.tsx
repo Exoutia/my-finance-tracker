@@ -3,6 +3,7 @@ import * as z from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
+import { ArrowRight } from "lucide-react";
 
 // Mocking an entity fetch function—replace this with your real service layer API call
 import { type Entity, getAllEntitiesAtOnce } from "@/src/service.ts";
@@ -11,10 +12,10 @@ import type { AutocompleteOption } from "@/components/autocomplete.tsx";
 import Autocomplete from "@/components/autocomplete.tsx";
 
 const transactionFormSchema = z.object({
-  from_entities_id: z.string().uuid({
+  from_entities_id: z.uuid({
     message: "Please select a valid source account",
   }),
-  to_entities_id: z.string().uuid({
+  to_entities_id: z.uuid({
     message: "Please select a valid destination account",
   }),
   amount: z.coerce.number().gt(0, { message: "Amount must be greater than 0" }),
@@ -62,7 +63,7 @@ export default function CreateTransactionForm(
     }));
   }, [entitiesQuery.data]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrors({});
 
@@ -74,7 +75,15 @@ export default function CreateTransactionForm(
       to_entities_id: toEntityId,
       amount: formData.get("amount"),
       description: formData.get("description") || null,
-      transaction_datetime: formData.get("transaction_datetime"),
+      transaction_datetime: `${
+        formData.get("transaction_date")
+          ? formData.get("transaction_date")
+          : Temporal.Now.plainDateISO().toString()
+      }T${
+        formData.get("transaction_time")
+          ? formData.get("transaction_time")
+          : Temporal.Now.plainTimeISO().toString().split(".")[0] // Splitting avoids fractional seconds if not needed
+      }`,
       tags: rawTags
         ? rawTags.split(",").map((t) => t.trim()).filter(Boolean)
         : [],
@@ -112,7 +121,7 @@ export default function CreateTransactionForm(
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-md p-6 bg-secondary-background border border-border rounded-base shadow-shadow flex flex-col gap-4 font-base text-foreground"
+      className="w-full max-w-lg p-6 bg-secondary-background border border-border rounded-base shadow-shadow flex flex-col gap-4 font-base text-foreground"
     >
       <h3 className="font-heading text-lg border-b border-border/40 pb-2">
         Record New Transaction
@@ -124,70 +133,91 @@ export default function CreateTransactionForm(
         </div>
       )}
 
-      {/* From Autocomplete Picker Field */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-          From Account
-        </label>
-        <Autocomplete
-          options={autocompleteOptions}
-          placeholder="Search source registry..."
-          onSelect={(value) => setFromEntityId(value)}
-          error={errors.from_entities_id}
-          resetToggle={clearForm}
-        />
+      <div className="flex justify-between items-center">
+        {/* From Autocomplete Picker Field */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+            From Account
+          </label>
+          <Autocomplete
+            options={autocompleteOptions}
+            placeholder="Search source registry..."
+            onSelect={(value) => setFromEntityId(value)}
+            error={errors.from_entities_id}
+            resetToggle={clearForm}
+          />
+        </div>
+        <div className="mt-5">
+          <ArrowRight />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+            To Account
+          </label>
+          <Autocomplete
+            options={autocompleteOptions}
+            placeholder="Search target registry..."
+            onSelect={(value) => setToEntityId(value)}
+            error={errors.to_entities_id}
+            resetToggle={clearForm}
+          />
+        </div>
       </div>
 
-      {/* To Autocomplete Picker Field */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-          To Account
-        </label>
-        <Autocomplete
-          options={autocompleteOptions}
-          placeholder="Search target registry..."
-          onSelect={(value) => setToEntityId(value)}
-          error={errors.to_entities_id}
-          resetToggle={clearForm}
-        />
+      <div className="flex justify-between">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+            Amount
+          </label>
+          <Input
+            name="amount"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            className="shadow-none"
+          />
+          {errors.amount && (
+            <span className="text-xs text-destructive">{errors.amount}</span>
+          )}
+        </div>
+
+        {/* DateTime Input */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+            Date
+          </label>
+          <Input
+            name="transaction_date"
+            type="date"
+            defaultValue={Temporal.Now.plainDateISO().toString()}
+            className="shadow-none"
+          />
+          {errors.transaction_datetime && (
+            <span className="text-xs text-destructive">
+              {errors.transaction_datetime}
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+            Time
+          </label>
+          <Input
+            name="transaction_time"
+            type="time"
+            defaultValue={Temporal.Now.plainTimeISO().toString().slice(0, 5)}
+            className="shadow-none"
+          />
+          {errors.transaction_datetime && (
+            <span className="text-xs text-destructive">
+              {errors.transaction_datetime}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Amount Input */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-          Amount
-        </label>
-        <Input
-          name="amount"
-          type="number"
-          step="0.01"
-          placeholder="0.00"
-          className="shadow-none"
-        />
-        {errors.amount && (
-          <span className="text-xs text-destructive">{errors.amount}</span>
-        )}
-      </div>
-
-      {/* DateTime Input */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-          Date & Time
-        </label>
-        <Input
-          name="transaction_datetime"
-          type="datetime-local"
-          defaultValue={new Date().toISOString().slice(0, 16)}
-          className="shadow-none"
-        />
-        {errors.transaction_datetime && (
-          <span className="text-xs text-destructive">
-            {errors.transaction_datetime}
-          </span>
-        )}
-      </div>
-
-      {/* Memo Field */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-heading uppercase tracking-wider opacity-80">
           Description
@@ -199,7 +229,6 @@ export default function CreateTransactionForm(
         />
       </div>
 
-      {/* Tags Input */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-heading uppercase tracking-wider opacity-80">
           Tags (Comma Separated)
