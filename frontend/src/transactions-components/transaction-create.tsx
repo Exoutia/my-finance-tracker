@@ -117,139 +117,162 @@ export default function CreateTransactionForm(
       },
     });
   };
+  // Helper function to generate a random word of a random length (between 3 and 10 characters)
+  const generateRandomWord = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyz";
+    const randomLength = Math.floor(Math.random() * 8) + 3; // Length between 3 and 10
+    return Array.from(
+      { length: randomLength },
+      () => chars[Math.floor(Math.random() * chars.length)],
+    ).join("");
+  };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full max-w-lg p-6 bg-secondary-background border border-border rounded-base shadow-shadow flex flex-col gap-4 font-base text-foreground"
-    >
-      <h3 className="font-heading text-lg border-b border-border/40 pb-2">
-        Record New Transaction
-      </h3>
-
-      {errors.root && (
-        <div className="p-3 text-xs bg-destructive/10 text-destructive border border-destructive/20 rounded-base">
-          {errors.root}
-        </div>
-      )}
-
-      <div className="flex justify-between items-center">
-        {/* From Autocomplete Picker Field */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-            From Account
-          </label>
-          <Autocomplete
-            options={autocompleteOptions}
-            placeholder="Search source registry..."
-            onSelect={(value) => setFromEntityId(value)}
-            error={errors.from_entities_id}
-            resetToggle={clearForm}
-          />
-        </div>
-        <div className="mt-5">
-          <ArrowRight />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-            To Account
-          </label>
-          <Autocomplete
-            options={autocompleteOptions}
-            placeholder="Search target registry..."
-            onSelect={(value) => setToEntityId(value)}
-            error={errors.to_entities_id}
-            resetToggle={clearForm}
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-between">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-            Amount
-          </label>
-          <Input
-            name="amount"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            className="shadow-none"
-          />
-          {errors.amount && (
-            <span className="text-xs text-destructive">{errors.amount}</span>
-          )}
-        </div>
-
-        {/* DateTime Input */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-            Date
-          </label>
-          <Input
-            name="transaction_date"
-            type="date"
-            defaultValue={Temporal.Now.plainDateISO().toString()}
-            className="shadow-none"
-          />
-          {errors.transaction_datetime && (
-            <span className="text-xs text-destructive">
-              {errors.transaction_datetime}
-            </span>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-            Time
-          </label>
-          <Input
-            name="transaction_time"
-            type="time"
-            defaultValue={Temporal.Now.plainTimeISO().toString().slice(0, 5)}
-            className="shadow-none"
-          />
-          {errors.transaction_datetime && (
-            <span className="text-xs text-destructive">
-              {errors.transaction_datetime}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-          Description
-        </label>
-        <Input
-          name="description"
-          placeholder="Optional notes..."
-          className="shadow-none"
-        />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-heading uppercase tracking-wider opacity-80">
-          Tags (Comma Separated)
-        </label>
-        <Input
-          name="tags"
-          placeholder="closingAccount, dividend, corporate"
-          className="shadow-none"
-        />
-      </div>
-
-      <Button
-        type="submit"
-        variant="neutral"
-        disabled={mutation.isPending}
-        className="mt-2 w-full h-10 font-heading cursor-pointer"
+    <div className="flex gap-5">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-lg p-6 bg-secondary-background border border-border rounded-base shadow-shadow flex flex-col gap-4 font-base text-foreground"
       >
-        {mutation.isPending
-          ? "Executing payload processing..."
-          : "Submit Transaction"}
-      </Button>
-    </form>
+        <h3 className="font-heading text-lg border-b border-border/40 pb-2">
+          Record New Transaction
+        </h3>
+
+        {errors.root && (
+          <div className="p-3 text-xs bg-destructive/10 text-destructive border border-destructive/20 rounded-base">
+            {errors.root}
+          </div>
+        )}
+
+        <div className="flex justify-between items-center">
+          {/* From Autocomplete Picker Field */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+              From Account
+            </label>
+            <Autocomplete
+              options={autocompleteOptions}
+              placeholder="Search source registry..."
+              onSelect={(value) => setFromEntityId(value)}
+              error={errors.from_entities_id}
+              resetToggle={clearForm}
+            />
+          </div>
+          <div className="mt-5">
+            <ArrowRight />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+              To Account
+            </label>
+            <Autocomplete
+              options={autocompleteOptions}
+              placeholder="Search target registry..."
+              onSelect={(value) => setToEntityId(value)}
+              error={errors.to_entities_id}
+              resetToggle={clearForm}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+              Amount
+            </label>
+            <Input
+              name="amount"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              className="shadow-none"
+            />
+            {errors.amount && (
+              <span className="text-xs text-destructive">{errors.amount}</span>
+            )}
+          </div>
+
+          {/* DateTime Input */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+              Date
+            </label>
+            <Input
+              name="transaction_date"
+              type="date"
+              defaultValue={Temporal.Now.plainDateISO().toString()}
+              className="shadow-none"
+            />
+            {errors.transaction_datetime && (
+              <span className="text-xs text-destructive">
+                {errors.transaction_datetime}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+              Time
+            </label>
+            <Input
+              name="transaction_time"
+              type="time"
+              defaultValue={Temporal.Now.plainTimeISO().toString().slice(0, 5)}
+              className="shadow-none"
+            />
+            {errors.transaction_datetime && (
+              <span className="text-xs text-destructive">
+                {errors.transaction_datetime}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+            Description
+          </label>
+          <Input
+            name="description"
+            placeholder="Optional notes..."
+            className="shadow-none"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-heading uppercase tracking-wider opacity-80">
+            Tags (Comma Separated)
+          </label>
+          <Input
+            name="tags"
+            placeholder="closingAccount, dividend, corporate"
+            className="shadow-none"
+          />
+        </div>
+
+        <Button
+          type="submit"
+          variant="neutral"
+          disabled={mutation.isPending}
+          className="mt-2 w-full h-10 font-heading cursor-pointer"
+        >
+          {mutation.isPending
+            ? "Executing payload processing..."
+            : "Submit Transaction"}
+        </Button>
+      </form>
+      <div className="w-full p-6 bg-secondary-background border border-border rounded-base shadow-shadow flex flex-col gap-4 font-base text-foreground">
+        <h3 className="font-heading text-lg border-b border-border/40 pb-2">
+          Templates
+        </h3>
+        <div className="flex gap-1 flex-wrap">
+          {Array.from({ length: 100 }).map((_, i) => (
+            <div className="border-stone-400 px-2 border-2 rounded-sm" key={i}>
+              {generateRandomWord()}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
