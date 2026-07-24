@@ -5,7 +5,7 @@ from typing import List, Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import func
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 
 @unique
@@ -193,3 +193,21 @@ class StockTransactionInfo(TimeStampMixin, SQLModel, table=True):
     avg_price: Decimal = Field(ge=0)
     exchange: str
     stock: "Stock" = Relationship(back_populates="stock_transaction_info")
+
+
+class TransactionTemplate(TimeStampMixin, SQLModel, table=True):
+    __tablename__ = "transaction_templates"
+
+    __table_args__ = (
+        UniqueConstraint("name", name="uq_transaction_template_name"),
+        # Optional: Uncomment if you'd rather allow duplicate names
+        # but want to block duplicate transaction logic configurations instead:
+        UniqueConstraint("fromEntityId", "toEntityId", "amount", name="uq_transaction_template_signature"),
+    )
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    description: Optional[str] = None
+    tags: Optional[str] = None
+    fromEntityId: Optional[UUID]
+    toEntityId: Optional[UUID]
+    amount: Decimal = Field(ge=0, default=Decimal(0))

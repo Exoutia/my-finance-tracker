@@ -679,3 +679,37 @@ export function bulkCreateVirtualEntities(
     body: formData,
   });
 }
+
+export interface TransactionTemplateCreate {
+  name: string;
+  description: string | null;
+  amount: number | null;
+  fromEntityId: string | null;
+  toEntityId: string | null;
+  tags: string | null;
+}
+
+export interface TransactionTemplateRead {
+  id: string;
+  name: string;
+  description: string | null;
+  amount: number | null;
+  fromEntityId: string | null;
+  toEntityId: string | null;
+  tags: string | null;
+}
+
+export function CreateTransactionTemplate(
+  data: TransactionTemplateCreate,
+): Promise<TransactionTemplateRead> {
+  return apiRequest<TransactionTemplateRead>("/transactions/templates/create", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function GetTransactionTemplates(): Promise<TransactionTemplateRead[]> {
+  return apiRequest<TransactionTemplateRead[]>("/transactions/templates", {
+    method: "GET",
+  });
+}

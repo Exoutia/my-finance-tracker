@@ -3,6 +3,7 @@
   "specifiers": {
     "jsr:@zod/zod@^4.4.3": "4.4.3",
     "npm:@babel/core@^7.29.0": "7.29.7",
+    "npm:@base-ui/react@^1.6.0": "1.6.0_@types+react@19.2.17_react@19.2.7_react-dom@19.2.7__react@19.2.7",
     "npm:@eslint/js@^10.0.1": "10.0.1_eslint@10.6.0",
     "npm:@fontsource-variable/inter@^5.2.8": "5.2.8",
     "npm:@radix-ui/react-checkbox@^1.3.3": "1.3.6_@types+react@19.2.17_@types+react-dom@19.2.3__@types+react@19.2.17_react@19.2.7_react-dom@19.2.7__react@19.2.7",
@@ -241,6 +242,9 @@
         "@babel/plugin-transform-typescript"
       ]
     },
+    "@babel/runtime@7.29.7": {
+      "integrity": "sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw=="
+    },
     "@babel/template@7.29.7": {
       "integrity": "sha512-puq+Gf35oI24FeN11LkoUQFqv9uwNeWpxXZi/Ji3rRIoKAzKnxRaZ+Gkj0vKS9ZCiTESfng1N9LyOyXvo+m+Gg==",
       "dependencies": [
@@ -266,6 +270,37 @@
       "dependencies": [
         "@babel/helper-string-parser",
         "@babel/helper-validator-identifier"
+      ]
+    },
+    "@base-ui/react@1.6.0_@types+react@19.2.17_react@19.2.7_react-dom@19.2.7__react@19.2.7": {
+      "integrity": "sha512-/jzjTWJYXhRFO45Bev9lc3cHbmjzCMpUqbMZ2AgKy/z25mY9B6shGSNcXcjQar9n5doM0KYW1W8fcFv2jZBuMw==",
+      "dependencies": [
+        "@babel/runtime",
+        "@base-ui/utils",
+        "@floating-ui/react-dom",
+        "@floating-ui/utils",
+        "@types/react",
+        "react",
+        "react-dom",
+        "use-sync-external-store"
+      ],
+      "optionalPeers": [
+        "@types/react"
+      ]
+    },
+    "@base-ui/utils@0.3.1_@types+react@19.2.17_react@19.2.7_react-dom@19.2.7__react@19.2.7": {
+      "integrity": "sha512-gFFiltORVmW/N6IILTGxizP3PBpVpysqML1ALY5Vk0mH+7faVkCknOU31goYHN5Aoek2dkjxva1XOD2Ce9WuIg==",
+      "dependencies": [
+        "@babel/runtime",
+        "@floating-ui/utils",
+        "@types/react",
+        "react",
+        "react-dom",
+        "reselect",
+        "use-sync-external-store"
+      ],
+      "optionalPeers": [
+        "@types/react"
       ]
     },
     "@dotenvx/dotenvx@1.75.1": {
@@ -3585,6 +3620,9 @@
     "require-from-string@2.0.2": {
       "integrity": "sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw=="
     },
+    "reselect@5.2.0": {
+      "integrity": "sha512-AgZ3UOZm3YndfrJ4OYjgrT7bmCm/1iqkjvEfH/oYjzh6PD2qw4QuT3jjnXIrpdt4MTpMXclMT3lXbmRY+XRakw=="
+    },
     "resolve-from@4.0.0": {
       "integrity": "sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g=="
     },
@@ -4105,6 +4143,7 @@
     "packageJson": {
       "dependencies": [
         "npm:@babel/core@^7.29.0",
+        "npm:@base-ui/react@^1.6.0",
         "npm:@eslint/js@^10.0.1",
         "npm:@fontsource-variable/inter@^5.2.8",
         "npm:@radix-ui/react-checkbox@^1.3.3",

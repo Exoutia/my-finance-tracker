@@ -9,22 +9,22 @@ export interface AutocompleteOption {
 interface AutocompleteProps {
   options: AutocompleteOption[];
   placeholder?: string;
+  selectedValue?: string | null; // Added to make the component controllable
   onSelect: (value: string | null) => void;
   error?: string;
-  // Controlled clearing hook triggered via parent form reset bindings
   resetToggle?: boolean;
 }
 
 export default function Autocomplete({
   options,
   placeholder = "Search...",
+  selectedValue = null,
   onSelect,
   error,
   resetToggle,
 }: AutocompleteProps) {
   const [query, setQuery] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
-  const [_selectedValue, setSelectedValue] = React.useState("");
   const [focusedIndex, setFocusedIndex] = React.useState(-1);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -37,10 +37,22 @@ export default function Autocomplete({
     );
   }, [query, options]);
 
+  React.useEffect(() => {
+    if (selectedValue) {
+      const selectedOption = options.find((opt) => opt.value === selectedValue);
+      if (selectedOption) {
+        setQuery(selectedOption.label);
+        return;
+      }
+    }
+    if (!selectedValue && !isOpen) {
+      setQuery("");
+    }
+  }, [selectedValue, options]);
+
   // RESET HANDLER: Clears everything when the parent form completes successfully
   React.useEffect(() => {
     setQuery("");
-    setSelectedValue("");
     setFocusedIndex(-1);
   }, [resetToggle]);
 
@@ -65,7 +77,6 @@ export default function Autocomplete({
 
   const handleSelectOption = (option: AutocompleteOption) => {
     setQuery(option.label);
-    setSelectedValue(option.value);
     onSelect(option.value);
     setIsOpen(false);
   };
@@ -77,9 +88,9 @@ export default function Autocomplete({
 
       if (event.key === "ArrowDown") {
         event.preventDefault();
-        setFocusedIndex((
-          prev,
-        ) => (prev < filteredOptions.length - 1 ? prev + 1 : prev));
+        setFocusedIndex((prev) =>
+          prev < filteredOptions.length - 1 ? prev + 1 : prev
+        );
       } else if (event.key === "ArrowUp") {
         event.preventDefault();
         setFocusedIndex((prev) => (prev > 0 ? prev - 1 : 0));
@@ -99,7 +110,6 @@ export default function Autocomplete({
 
   const handleClear = () => {
     setQuery("");
-    setSelectedValue("");
     onSelect(null);
   };
 
@@ -110,7 +120,6 @@ export default function Autocomplete({
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            setSelectedValue("");
             onSelect(null);
             setIsOpen(true);
           }}

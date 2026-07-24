@@ -36,6 +36,8 @@ app.add_middleware(
         "http://127.0.0.1:5174",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,6 +50,17 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={"detail": "An internal server error occurred.", "type": type(exc).__name__},
+    )
+
+
+@app.exception_handler(service.EntityValidationError)
+async def entity_validation_exception_handler(request: Request, exc: service.EntityValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={
+            "detail": str(exc),
+            "type": "EntityValidationError",
+        },
     )
 
 
@@ -555,6 +568,20 @@ def get_entity_and_its_other_information(session: SessionDep, item_uuid: UUID):
         return data
     except service.DBException as err:
         raise HTTPException(status_code=500, detail="Internal data error") from err
+
+
+@app.post(
+    "/transactions/templates/create",
+    response_model=schemas.TransactionTemplateRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_template(session: SessionDep, payload: schemas.TransactionTemplateCreate):
+    return service.create_transaction_template(session=session, payload=payload)
+
+
+@app.get("/transactions/templates", response_model=List[schemas.TransactionTemplateRead])
+def list_templates(session: SessionDep):
+    return service.get_all_transaction_templates(session=session)
 
 
 if __name__ == "__main__":

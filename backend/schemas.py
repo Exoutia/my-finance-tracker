@@ -351,3 +351,27 @@ class TransactionWithNameRead(TransactionRead):
 class EntityLiquidResponse(BaseModel):
     EntityRegistry: EntityRegistryRead
     LiquidAccount: LiquidAccountRead
+
+
+class TransactionTemplateCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, description="Unique template name")
+    description: Optional[str] = Field(None, max_length=255)
+    amount: Decimal = Field(default=Decimal("0.00"), ge=0)
+    fromEntityId: Optional[UUID] = None
+    toEntityId: Optional[UUID] = None
+    tags: Optional[str]
+
+
+# --- OUTPUT SCHEMAS (What the API returns) ---
+class TransactionTemplateRead(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    amount: Decimal
+    fromEntityId: Optional[UUID]
+    toEntityId: Optional[UUID]
+    tags: Optional[str]
+
+    class Config:
+        # Allows Pydantic to read data directly from database objects
+        from_attributes = True

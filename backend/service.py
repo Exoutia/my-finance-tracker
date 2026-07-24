@@ -14,6 +14,7 @@ from models import (
     Stock,
     Tag,
     Transaction,
+    TransactionTemplate,
     VirtualEntity,
 )
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -796,3 +797,42 @@ def bulk_insert_virtual_entities(db: Session, items: list[schemas.VirtualEntityC
     for r in staged_records:
         db.refresh(r)
     return staged_records
+
+
+def create_transaction_template(session: Session, payload: schemas.TransactionTemplateCreate) -> TransactionTemplate:
+    """
+    Validates rules and creates a new transaction template entry in the database registry.
+    """
+    # Enforce Uniqueness: Block identical names
+    name_check = session.exec(select(TransactionTemplate).where(TransactionTemplate.name == payload.name)).first()
+    if name_check:
+        raise EntityValidationError(f"A template named '{payload.name}' already exists.")
+
+    # Enforce Uniqueness: Block identical asset flow parameters
+    flow_check = session.exec(
+        select(TransactionTemplate).where(
+            TransactionTemplate.fromEntityId == payload.fromEntityId,
+            TransactionTemplate.toEntityId == payload.toEntityId,
+            TransactionTemplate.amount == payload.amount,
+        )
+    ).first()
+
+    if flow_check:
+        raise EntityValidationError(
+            f"An identical configuration already exists under the template: '{flow_check.name}'."
+        )
+
+    db_template = TransactionTemplate.model_validate(payload)
+    session.add(db_template)
+    session.commit()
+    session.refresh(db_template)
+    return db_template
+
+
+def get_all_transaction_templates(session: Session):
+    """
+    Retrieves all stored templates sorted alphabetically by name.
+    """
+    statement = select(TransactionTemplate).order_by(TransactionTemplate.name)
+    res = session.exec(statement).all()
+    return res
